@@ -1,8 +1,8 @@
 {
-  "name": "smart-monorepo",
+  "name": "smart",
   "version": "1.0.0",
   "private": true,
-  "description": "NPM Monorepo for Web and Backend",
+  "description": "Smart Monorepo",
   "workspaces": [
     "apps/*"
   ],
