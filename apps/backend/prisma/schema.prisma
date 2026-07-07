@@ -11,3 +11,162 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// 1. Tabel Masyarakat
+model Masyarakat {
+  idMasyarakat String  @id @default(uuid()) @map("id_masyarakat") @db.VarChar(36)
+  nik          String  @unique @db.VarChar(36)
+  nama         String  @db.VarChar(36)
+  alamat       String  @db.Text
+  noHp         String  @map("no_hp") @db.VarChar(14)
+  username     String  @db.VarChar(21)
+  password     String  @db.VarChar(255)
+
+  // Relasi
+  warga        Warga?
+  pengurusRt   PengurusRt?
+
+  @@map("masyarakat")
+}
+
+// 2. Tabel Warga
+model Warga {
+  idWarga           String @id @default(uuid()) @map("id_warga") @db.VarChar(36)
+  statusKeanggotaan String @map("status_keanggotaan") @db.VarChar(12)
+
+  // Foreign Key ke Masyarakat
+  idMasyarakat      String @unique @map("id_masyarakat") @db.VarChar(36)
+  masyarakat        Masyarakat @relation(fields: [idMasyarakat], references: [idMasyarakat], onDelete: Cascade)
+
+  // Relasi balik (Back-relations)
+  pembayaranIuran   PembayaranIuran[]
+  laporanKendala    LaporanKendala[]
+  umkm              Umkm[]
+
+  @@map("warga")
+}
+
+// 3. Tabel Pengurus RT
+model PengurusRt {
+  idPengurus     String @id @default(uuid()) @map("id_pengurus") @db.VarChar(36)
+  jabatan        String @db.VarChar(15)
+  periodeJabatan String @map("periode_jabatan") @db.VarChar(50)
+
+  // Foreign Key ke Masyarakat
+  idMasyarakat   String @unique @map("id_masyarakat") @db.VarChar(36)
+  masyarakat     Masyarakat @relation(fields: [idMasyarakat], references: [idMasyarakat], onDelete: Cascade)
+
+  // Relasi balik (Back-relations)
+  iuranDibuat      Iuran[]
+  pembayaranIuran  PembayaranIuran[]
+  pengeluaranKas   PengeluaranKas[]
+  pengumuman       Pengumuman[]
+  laporanKendala   LaporanKendala[]
+  umkmDiverifikasi Umkm[]
+
+  @@map("pengurus_rt")
+}
+
+// 4. Tabel Iuran
+model Iuran {
+  idIuran           String   @id @default(uuid()) @map("id_iuran") @db.VarChar(36)
+  namaIuran         String   @map("nama_iuran") @db.VarChar(40)
+  nominal           Decimal  @db.Decimal(20, 2)
+  tanggalJatuhTempo DateTime @map("tanggal_jatuh_tempo") @db.Date
+  statusAktif       Boolean  @map("status_aktif")
+  idKetuaRt         String   @map("id_ketua_rt") @db.VarChar(36)
+
+  ketuaRt           PengurusRt @relation(fields: [idKetuaRt], references: [idPengurus])
+  pembayaranIuran   PembayaranIuran[]
+
+  @@map("iuran")
+}
+
+// 5. Tabel Pembayaran Iuran
+model PembayaranIuran {
+  idPembayaran     String   @id @default(uuid()) @map("id_pembayaran") @db.VarChar(36)
+  idWarga          String   @map("id_warga") @db.VarChar(36)
+  idIuran          String   @map("id_iuran") @db.VarChar(36)
+  periode          String   @db.VarChar(20) 
+  idPengurus       String   @map("id_pengurus") @db.VarChar(36)
+  tanggalBayar     DateTime @map("tanggal_bayar") @db.Date
+  metodeBayar      String   @map("metode_bayar") @db.VarChar(15)
+  jumlahBayar      Decimal  @map("jumlah_bayar") @db.Decimal(20, 2)
+  buktiPembayaran  String?  @map("bukti_pembayaran") @db.Text 
+  statusVerifikasi String   @map("status_verifikasi") @db.VarChar(15)
+
+  warga            Warga      @relation(fields: [idWarga], references: [idWarga])
+  iuran            Iuran      @relation(fields: [idIuran], references: [idIuran])
+  pengurus         PengurusRt @relation(fields: [idPengurus], references: [idPengurus])
+
+  // Memastikan warga tidak membayar iuran yang sama dua kali pada periode yang sama
+  @@unique([idWarga, idIuran, periode]) 
+  @@map("pembayaran_iuran")
+}
+
+// 6. Tabel Pengeluaran KAS
+model PengeluaranKas {
+  idPengeluaran       String   @id @default(uuid()) @map("id_pengeluaran") @db.VarChar(36)
+  idPengurus          String   @map("id_pengurus") @db.VarChar(36)
+  kategoriPengeluaran String   @map("kategori_pengeluaran") @db.VarChar(15)
+  nominalPengeluaran  Decimal  @map("nominal_pengeluaran") @db.Decimal(20, 2)
+  tanggalKeluar       DateTime @map("tanggal_keluar") @db.Date
+  keterangan          String   @db.VarChar(30)
+  buktiNota           String?  @map("bukti_nota") @db.Text
+
+  pengurus            PengurusRt @relation(fields: [idPengurus], references: [idPengurus])
+
+  @@map("pengeluaran_kas")
+}
+
+// 7. Tabel Pengumuman
+model Pengumuman {
+  idPengumuman      String   @id @default(uuid()) @map("id_pengumuman") @db.VarChar(36)
+  idPengurus        String   @map("id_pengurus") @db.VarChar(36)
+  judul             String   @db.VarChar(15)
+  isiPengumuman     String   @map("isi_pengumuman") @db.Text
+  lampiran          String?  @db.Text
+  tanggalPengumuman DateTime @map("tanggal_pengumuman") @db.Date
+  statusPublikasi   String   @map("status_publikasi") @db.VarChar(12)
+
+  pengurus          PengurusRt @relation(fields: [idPengurus], references: [idPengurus])
+
+  @@map("pengumuman")
+}
+
+// 8. Tabel Laporan Kendala
+model LaporanKendala {
+  idLaporan       String   @id @default(uuid()) @map("id_laporan") @db.VarChar(36)
+  idWarga         String   @map("id_warga") @db.VarChar(36)
+  idPengurus      String   @map("id_pengurus") @db.VarChar(36)
+  kategoriKendala String   @map("kategori_kendala") @db.VarChar(15)
+  deskripsi       String   @db.Text
+  fotoKendala     String?  @map("foto_kendala") @db.Text
+  tanggalLapor    DateTime @map("tanggal_lapor") @db.Date
+  statusLaporan   String   @map("status_laporan") @db.VarChar(10)
+  tanggapan       String?  @db.Text
+
+  warga           Warga      @relation(fields: [idWarga], references: [idWarga])
+  pengurus        PengurusRt @relation(fields: [idPengurus], references: [idPengurus])
+
+  @@map("laporan_kendala")
+}
+
+// 9. Tabel UMKM
+model Umkm {
+  idUmkm           String  @id @default(uuid()) @map("id_umkm") @db.VarChar(36)
+  idWarga          String  @map("id_warga") @db.VarChar(36)
+  idPengurus       String  @map("id_pengurus") @db.VarChar(36)
+  namaUsaha        String  @map("nama_usaha") @db.VarChar(15)
+  jenisUsaha       String  @map("jenis_usaha") @db.VarChar(10)
+  deskripsiUsaha   String  @map("deskripsi_usaha") @db.Text
+  alamatUsaha      String  @map("alamat_usaha") @db.Text
+  kontakUsaha      String  @map("kontak_usaha") @db.VarChar(15)
+  fotoUsaha        String? @map("foto_usaha") @db.Text
+  statusVerifikasi String  @map("status_verifikasi") @db.VarChar(12)
+
+  warga            Warga      @relation(fields: [idWarga], references: [idWarga])
+  pengurus         PengurusRt @relation(fields: [idPengurus], references: [idPengurus])
+
+  @@map("umkm")
+}
