@@ -138,7 +138,7 @@ model Pengumuman {
 model LaporanKendala {
   idLaporan       String   @id @default(uuid()) @map("id_laporan") @db.VarChar(36)
   idWarga         String   @map("id_warga") @db.VarChar(36)
-  idPengurus      String   @map("id_pengurus") @db.VarChar(36)
+  idPengurus      String?   @map("id_pengurus") @db.VarChar(36)
   kategoriKendala String   @map("kategori_kendala") @db.VarChar(15)
   deskripsi       String   @db.Text
   fotoKendala     String?  @map("foto_kendala") @db.Text
@@ -146,8 +146,8 @@ model LaporanKendala {
   statusLaporan   String   @map("status_laporan") @db.VarChar(10)
   tanggapan       String?  @db.Text
 
-  warga           Warga      @relation(fields: [idWarga], references: [idWarga])
-  pengurus        PengurusRt @relation(fields: [idPengurus], references: [idPengurus])
+  warga           Warga       @relation(fields: [idWarga], references: [idWarga])
+  pengurus        PengurusRt? @relation(fields: [idPengurus], references: [idPengurus])
 
   @@map("laporan_kendala")
 }
