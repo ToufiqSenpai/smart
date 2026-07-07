@@ -1,0 +1,2149 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SMART RT API",
+    "version": "1.0.0",
+    "description": "API Contract untuk Sistem SMART RT — mengelola warga, UMKM, iuran, pengumuman, laporan kendala, keuangan, dan profil."
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Base URL"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login",
+        "description": "Melakukan autentikasi pengguna menggunakan username dan password.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string", "example": "budi123" },
+                  "password": { "type": "string", "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "accessToken": { "type": "string" },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string" },
+                            "nama": { "type": "string" },
+                            "role": { "type": "string", "enum": ["RESIDENT", "OFFICER", "CHAIRPERSON"] }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Username atau password salah",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Logout",
+        "description": "Mengakhiri sesi login pengguna.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Logout berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Logout berhasil." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Dashboard",
+        "description": "Mengambil data dashboard sesuai dengan hak akses pengguna yang sedang login.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Dashboard berhasil dimuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "oneOf": [
+                        {
+                          "title": "Warga",
+                          "properties": {
+                            "profil": {
+                              "type": "object",
+                              "properties": {
+                                "nama": { "type": "string" },
+                                "statusKeanggotaan": { "type": "string" }
+                              }
+                            },
+                            "jumlahUMKM": { "type": "integer" },
+                            "jumlahTagihanBelumDibayar": { "type": "integer" },
+                            "jumlahLaporanSaya": { "type": "integer" },
+                            "pengumumanTerbaru": { "type": "integer" }
+                          }
+                        },
+                        {
+                          "title": "Pengurus RT",
+                          "properties": {
+                            "totalWarga": { "type": "integer" },
+                            "totalUMKM": { "type": "integer" },
+                            "totalLaporanKendala": { "type": "integer" },
+                            "pengumumanAktif": { "type": "integer" },
+                            "totalPengeluaranKas": { "type": "integer" }
+                          }
+                        },
+                        {
+                          "title": "Ketua RT",
+                          "properties": {
+                            "totalWarga": { "type": "integer" },
+                            "wargaMenungguVerifikasi": { "type": "integer" },
+                            "totalIuranAktif": { "type": "integer" },
+                            "totalUMKM": { "type": "integer" },
+                            "totalLaporanKendala": { "type": "integer" },
+                            "pengumumanAktif": { "type": "integer" },
+                            "totalPengeluaranKas": { "type": "integer" }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login atau token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/residents/register": {
+      "post": {
+        "tags": ["Residents"],
+        "summary": "Registrasi Warga",
+        "description": "Mendaftarkan masyarakat sebagai warga RT yang nantinya akan diverifikasi oleh Ketua RT.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nik", "nama", "alamat", "no_hp", "username", "password"],
+                "properties": {
+                  "nik": { "type": "string", "example": "3201234567890001" },
+                  "nama": { "type": "string", "example": "Budi Santoso" },
+                  "alamat": { "type": "string", "example": "Jl. Melati No. 10" },
+                  "no_hp": { "type": "string", "example": "081234567890" },
+                  "username": { "type": "string", "example": "budi123" },
+                  "password": { "type": "string", "example": "password123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registrasi berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Registrasi berhasil. Menunggu verifikasi Ketua RT." }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "NIK atau Username sudah terdaftar",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/residents": {
+      "get": {
+        "tags": ["Residents"],
+        "summary": "Daftar Warga",
+        "description": "Mengambil daftar seluruh warga RT.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Nama atau NIK" },
+          { "name": "status", "in": "query", "schema": { "type": "string" }, "description": "Status keanggotaan" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar warga berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "nik": { "type": "string" },
+                          "nama": { "type": "string" },
+                          "statusKeanggotaan": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/residents/{residentId}": {
+      "get": {
+        "tags": ["Residents"],
+        "summary": "Detail Warga",
+        "description": "Mengambil informasi detail seorang warga.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "residentId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "ID Warga" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail warga berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "nik": { "type": "string" },
+                        "nama": { "type": "string" },
+                        "alamat": { "type": "string" },
+                        "noHp": { "type": "string" },
+                        "statusKeanggotaan": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Residents"],
+        "summary": "Ubah Data Warga",
+        "description": "Memperbarui informasi data warga.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "residentId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": { "type": "string", "example": "Budi Santoso" },
+                  "alamat": { "type": "string", "example": "Alamat Baru" },
+                  "no_hp": { "type": "string", "example": "081234567891" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Data warga berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Data warga berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/residents/pending-verifications": {
+      "get": {
+        "tags": ["Residents"],
+        "summary": "Daftar Warga Menunggu Verifikasi",
+        "description": "Mengambil daftar warga yang masih menunggu proses verifikasi.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar warga menunggu verifikasi berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "nama": { "type": "string" },
+                          "tanggalRegistrasi": { "type": "string", "format": "date" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/residents/{residentId}/verification-status": {
+      "patch": {
+        "tags": ["Residents"],
+        "summary": "Verifikasi Warga",
+        "description": "Mengubah status keanggotaan warga menjadi Aktif atau Ditolak.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "residentId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["AKTIF", "DITOLAK"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status keanggotaan berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Status keanggotaan berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Status keanggotaan tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/residents/officers": {
+      "get": {
+        "tags": ["Residents"],
+        "summary": "Daftar Pengurus RT",
+        "description": "Mengambil daftar seluruh Pengurus RT beserta jabatannya.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar pengurus RT berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "nama": { "type": "string" },
+                          "jabatan": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/residents/{residentId}/officer-role": {
+      "patch": {
+        "tags": ["Residents"],
+        "summary": "Kelola Jabatan Pengurus RT",
+        "description": "Menetapkan, mengubah, atau menghapus jabatan Pengurus RT pada seorang warga.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "residentId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "jabatan": { "type": "string", "nullable": true, "example": "SEKRETARIS" },
+                  "periodeJabatan": { "type": "string", "example": "2026-2028" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Jabatan pengurus berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Jabatan pengurus berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Data warga tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/businesses": {
+      "get": {
+        "tags": ["Businesses"],
+        "summary": "Daftar UMKM",
+        "description": "Mengambil daftar seluruh UMKM yang telah terdaftar di lingkungan RT.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "keyword", "in": "query", "schema": { "type": "string" }, "description": "Pencarian berdasarkan nama usaha" },
+          { "name": "jenis_usaha", "in": "query", "schema": { "type": "string" }, "description": "Filter jenis usaha" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar UMKM berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "nama_usaha": { "type": "string" },
+                          "jenis_usaha": { "type": "string" },
+                          "alamat_usaha": { "type": "string" },
+                          "status_verifikasi": { "type": "string", "enum": ["VERIFIED", "PENDING", "REJECTED"] }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Businesses"],
+        "summary": "Tambah UMKM",
+        "description": "Menambahkan data UMKM baru.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nama_usaha", "jenis_usaha", "deskripsi_usaha", "alamat_usaha", "kontak_usaha"],
+                "properties": {
+                  "nama_usaha": { "type": "string" },
+                  "jenis_usaha": { "type": "string" },
+                  "deskripsi_usaha": { "type": "string" },
+                  "alamat_usaha": { "type": "string" },
+                  "kontak_usaha": { "type": "string" },
+                  "foto_usaha": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "UMKM berhasil didaftarkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "UMKM berhasil didaftarkan." }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/businesses/me": {
+      "get": {
+        "tags": ["Businesses"],
+        "summary": "Daftar UMKM Saya",
+        "description": "Mengambil seluruh UMKM milik pengguna yang sedang login.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar UMKM berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "nama_usaha": { "type": "string" },
+                          "status_verifikasi": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/businesses/{businessId}": {
+      "get": {
+        "tags": ["Businesses"],
+        "summary": "Detail UMKM",
+        "description": "Mengambil informasi detail UMKM.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "businessId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail UMKM berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "nama_usaha": { "type": "string" },
+                        "jenis_usaha": { "type": "string" },
+                        "deskripsi_usaha": { "type": "string" },
+                        "alamat_usaha": { "type": "string" },
+                        "kontak_usaha": { "type": "string" },
+                        "foto_usaha": { "type": "string" },
+                        "status_verifikasi": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Businesses"],
+        "summary": "Ubah Data UMKM",
+        "description": "Mengubah informasi UMKM milik pengguna.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "businessId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama_usaha": { "type": "string" },
+                  "jenis_usaha": { "type": "string" },
+                  "deskripsi_usaha": { "type": "string" },
+                  "alamat_usaha": { "type": "string" },
+                  "kontak_usaha": { "type": "string" },
+                  "foto_usaha": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Data UMKM berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Data UMKM berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/businesses/{businessId}/status": {
+      "patch": {
+        "tags": ["Businesses"],
+        "summary": "Validasi UMKM",
+        "description": "Memvalidasi status UMKM.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "businessId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["VERIFIED", "REJECTED"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status UMKM berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Status UMKM berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Status verifikasi tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dues": {
+      "get": {
+        "tags": ["Dues - Master"],
+        "summary": "Daftar Iuran",
+        "description": "Mengambil daftar seluruh iuran yang tersedia.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar iuran berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "nama_iuran": { "type": "string" },
+                          "nominal": { "type": "number" },
+                          "tanggal_jatuh_tempo": { "type": "string", "format": "date" },
+                          "status_aktif": { "type": "boolean" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Dues - Master"],
+        "summary": "Tambah Iuran",
+        "description": "Menambahkan data iuran baru.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nama_iuran", "nominal", "tanggal_jatuh_tempo"],
+                "properties": {
+                  "nama_iuran": { "type": "string", "example": "Iuran Keamanan" },
+                  "nominal": { "type": "number", "example": 30000 },
+                  "tanggal_jatuh_tempo": { "type": "string", "format": "date", "example": "2026-07-10" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Data iuran berhasil ditambahkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Data iuran berhasil ditambahkan." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dues/{dueId}": {
+      "get": {
+        "tags": ["Dues - Master"],
+        "summary": "Detail Iuran",
+        "description": "Mengambil detail iuran.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "dueId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail iuran berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "nama_iuran": { "type": "string" },
+                        "nominal": { "type": "number" },
+                        "tanggal_jatuh_tempo": { "type": "string", "format": "date" },
+                        "status_aktif": { "type": "boolean" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Dues - Master"],
+        "summary": "Perbarui Iuran",
+        "description": "Memperbarui data iuran.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "dueId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama_iuran": { "type": "string" },
+                  "nominal": { "type": "number" },
+                  "tanggal_jatuh_tempo": { "type": "string", "format": "date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Data iuran berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Data iuran berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dues/{dueId}/status": {
+      "patch": {
+        "tags": ["Dues - Master"],
+        "summary": "Ubah Status Iuran",
+        "description": "Mengaktifkan atau menonaktifkan iuran.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "dueId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status iuran berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Status iuran berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dues/bills": {
+      "get": {
+        "tags": ["Dues - Payments"],
+        "summary": "Daftar Tagihan Saya",
+        "description": "Mengambil daftar tagihan iuran milik warga yang sedang login.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar tagihan berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id_iuran": { "type": "string" },
+                          "nama_iuran": { "type": "string" },
+                          "periode": { "type": "string" },
+                          "nominal": { "type": "number" },
+                          "status": { "type": "string", "enum": ["BELUM_DIBAYAR", "PENDING", "VERIFIED", "REJECTED"] }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dues/payments": {
+      "post": {
+        "tags": ["Dues - Payments"],
+        "summary": "Kirim Pembayaran Iuran",
+        "description": "Mengirim data pembayaran iuran beserta bukti pembayaran.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id_iuran", "periode", "metode_bayar", "jumlah_bayar", "bukti_pembayaran"],
+                "properties": {
+                  "id_iuran": { "type": "string", "example": "IUR-001" },
+                  "periode": { "type": "string", "example": "Juli 2026" },
+                  "metode_bayar": { "type": "string", "example": "Transfer Bank" },
+                  "jumlah_bayar": { "type": "number", "example": 25000 },
+                  "bukti_pembayaran": { "type": "string", "example": "bukti-transfer.jpg" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pembayaran berhasil dikirim",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Pembayaran berhasil dikirim." }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Data pembayaran tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Data iuran tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Dues - Payments"],
+        "summary": "Daftar Pembayaran Iuran",
+        "description": "Mengambil daftar seluruh pembayaran iuran yang telah dikirim warga.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar pembayaran berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id_pembayaran": { "type": "string" },
+                          "nama_warga": { "type": "string" },
+                          "nama_iuran": { "type": "string" },
+                          "periode": { "type": "string" },
+                          "jumlah_bayar": { "type": "number" },
+                          "status_verifikasi": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dues/payments/{paymentId}": {
+      "get": {
+        "tags": ["Dues - Payments"],
+        "summary": "Detail Pembayaran Iuran",
+        "description": "Mengambil informasi detail pembayaran iuran.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "paymentId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail pembayaran berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id_pembayaran": { "type": "string" },
+                        "nama_warga": { "type": "string" },
+                        "nama_iuran": { "type": "string" },
+                        "periode": { "type": "string" },
+                        "tanggal_bayar": { "type": "string", "format": "date" },
+                        "metode_bayar": { "type": "string" },
+                        "jumlah_bayar": { "type": "number" },
+                        "bukti_pembayaran": { "type": "string" },
+                        "status_verifikasi": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dues/payments/{paymentId}/status": {
+      "patch": {
+        "tags": ["Dues - Payments"],
+        "summary": "Verifikasi Pembayaran Iuran",
+        "description": "Mengubah status verifikasi pembayaran iuran.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "paymentId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["VERIFIED", "REJECTED"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status pembayaran berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Status pembayaran berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Status pembayaran tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dues/me/payments": {
+      "get": {
+        "tags": ["Dues - Payments"],
+        "summary": "Riwayat Pembayaran Saya",
+        "description": "Mengambil riwayat pembayaran iuran milik pengguna yang sedang login.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Riwayat pembayaran berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id_iuran": { "type": "string" },
+                          "nama_iuran": { "type": "string" },
+                          "periode": { "type": "string" },
+                          "tanggal_bayar": { "type": "string", "format": "date" },
+                          "jumlah_bayar": { "type": "number" },
+                          "status_verifikasi": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/announcements": {
+      "get": {
+        "tags": ["Announcements"],
+        "summary": "Daftar Pengumuman",
+        "description": "Mengambil daftar seluruh pengumuman yang telah dipublikasikan.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar pengumuman berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "judul": { "type": "string" },
+                          "tanggal_pengumuman": { "type": "string", "format": "date" },
+                          "status_publikasi": { "type": "string", "enum": ["PUBLISHED", "DRAFT"] }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Announcements"],
+        "summary": "Tambah Pengumuman",
+        "description": "Menambahkan pengumuman baru.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["judul", "isi_pengumuman", "status_publikasi"],
+                "properties": {
+                  "judul": { "type": "string", "example": "Kerja Bakti" },
+                  "isi_pengumuman": { "type": "string", "example": "Kerja bakti akan dilaksanakan hari Minggu." },
+                  "lampiran": { "type": "string", "example": "kerja-bakti.pdf" },
+                  "status_publikasi": { "type": "string", "enum": ["PUBLISHED", "DRAFT"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pengumuman berhasil ditambahkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Pengumuman berhasil ditambahkan." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/announcements/{announcementId}": {
+      "get": {
+        "tags": ["Announcements"],
+        "summary": "Detail Pengumuman",
+        "description": "Mengambil detail pengumuman.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "announcementId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail pengumuman berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "judul": { "type": "string" },
+                        "isi_pengumuman": { "type": "string" },
+                        "lampiran": { "type": "string" },
+                        "tanggal_pengumuman": { "type": "string", "format": "date" },
+                        "status_publikasi": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Announcements"],
+        "summary": "Perbarui Pengumuman",
+        "description": "Memperbarui pengumuman.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "announcementId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "judul": { "type": "string" },
+                  "isi_pengumuman": { "type": "string" },
+                  "lampiran": { "type": "string" },
+                  "status_publikasi": { "type": "string", "enum": ["PUBLISHED", "DRAFT"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pengumuman berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Pengumuman berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues": {
+      "get": {
+        "tags": ["Issues"],
+        "summary": "Daftar Laporan Kendala",
+        "description": "Mengambil seluruh laporan kendala dari warga.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar laporan berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "nama_warga": { "type": "string" },
+                          "kategori_kendala": { "type": "string" },
+                          "status_laporan": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Issues"],
+        "summary": "Buat Laporan Kendala",
+        "description": "Membuat laporan kendala baru.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kategori_kendala", "deskripsi"],
+                "properties": {
+                  "kategori_kendala": { "type": "string", "example": "Jalan Rusak" },
+                  "deskripsi": { "type": "string", "example": "Terdapat jalan berlubang." },
+                  "foto_kendala": { "type": "string", "example": "jalan.jpg" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Laporan berhasil dikirim",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Laporan berhasil dikirim." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/me": {
+      "get": {
+        "tags": ["Issues"],
+        "summary": "Laporan Saya",
+        "description": "Mengambil laporan milik pengguna yang sedang login.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar laporan berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "kategori_kendala": { "type": "string" },
+                          "status_laporan": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issueId}": {
+      "get": {
+        "tags": ["Issues"],
+        "summary": "Detail Laporan",
+        "description": "Mengambil detail laporan kendala.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "issueId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail laporan berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "kategori_kendala": { "type": "string" },
+                        "deskripsi": { "type": "string" },
+                        "foto_kendala": { "type": "string" },
+                        "tanggal_lapor": { "type": "string", "format": "date" },
+                        "status_laporan": { "type": "string" },
+                        "tanggapan": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Issues"],
+        "summary": "Perbarui Laporan",
+        "description": "Memperbarui laporan kendala (hanya jika status masih PENDING).",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "issueId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kategori_kendala": { "type": "string" },
+                  "deskripsi": { "type": "string" },
+                  "foto_kendala": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Laporan berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Laporan berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issueId}/status": {
+      "patch": {
+        "tags": ["Issues"],
+        "summary": "Ubah Status Laporan",
+        "description": "Mengubah status laporan kendala.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "issueId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status laporan berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Status laporan berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issueId}/follow-up": {
+      "patch": {
+        "tags": ["Issues"],
+        "summary": "Tindak Lanjut Laporan",
+        "description": "Memberikan tanggapan tindak lanjut pada laporan kendala.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "issueId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["tanggapan"],
+                "properties": {
+                  "tanggapan": { "type": "string", "example": "Jadwal perbaikan telah ditetapkan pada hari Minggu." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tindak lanjut laporan berhasil disimpan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Tindak lanjut laporan berhasil disimpan." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/expenses": {
+      "get": {
+        "tags": ["Finance"],
+        "summary": "Daftar Pengeluaran Kas",
+        "description": "Mengambil daftar seluruh data pengeluaran kas RT.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "kategori", "in": "query", "schema": { "type": "string" }, "description": "Filter kategori pengeluaran" },
+          { "name": "tanggal", "in": "query", "schema": { "type": "string", "format": "date" }, "description": "Filter tanggal pengeluaran" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar pengeluaran kas berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "kategori_pengeluaran": { "type": "string" },
+                          "nominal_pengeluaran": { "type": "number" },
+                          "tanggal_keluar": { "type": "string", "format": "date" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Finance"],
+        "summary": "Tambah Pengeluaran Kas",
+        "description": "Menambahkan data pengeluaran kas baru.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["kategori_pengeluaran", "nominal_pengeluaran", "tanggal_keluar", "keterangan"],
+                "properties": {
+                  "kategori_pengeluaran": { "type": "string", "example": "Kebersihan" },
+                  "nominal_pengeluaran": { "type": "number", "example": 500000 },
+                  "tanggal_keluar": { "type": "string", "format": "date", "example": "2026-07-08" },
+                  "keterangan": { "type": "string", "example": "Pembelian alat kebersihan" },
+                  "bukti_nota": { "type": "string", "example": "nota.pdf" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Data pengeluaran berhasil ditambahkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Data pengeluaran berhasil ditambahkan." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/finance/expenses/{expenseId}": {
+      "get": {
+        "tags": ["Finance"],
+        "summary": "Detail Pengeluaran Kas",
+        "description": "Mengambil informasi detail pengeluaran kas.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "expenseId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail pengeluaran berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "kategori_pengeluaran": { "type": "string" },
+                        "nominal_pengeluaran": { "type": "number" },
+                        "tanggal_keluar": { "type": "string", "format": "date" },
+                        "keterangan": { "type": "string" },
+                        "bukti_nota": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Finance"],
+        "summary": "Perbarui Pengeluaran Kas",
+        "description": "Memperbarui data pengeluaran kas.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "expenseId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kategori_pengeluaran": { "type": "string" },
+                  "nominal_pengeluaran": { "type": "number" },
+                  "tanggal_keluar": { "type": "string", "format": "date" },
+                  "keterangan": { "type": "string" },
+                  "bukti_nota": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Data pengeluaran berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Data pengeluaran berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak memiliki hak akses",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile/me": {
+      "get": {
+        "tags": ["Profile"],
+        "summary": "Lihat Profil",
+        "description": "Mengambil informasi profil pengguna yang sedang login.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Profil berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string" },
+                        "nik": { "type": "string" },
+                        "nama": { "type": "string" },
+                        "alamat": { "type": "string" },
+                        "no_hp": { "type": "string" },
+                        "username": { "type": "string" },
+                        "role": { "type": "string" },
+                        "status_keanggotaan": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login atau token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Profile"],
+        "summary": "Perbarui Profil",
+        "description": "Memperbarui informasi profil pengguna yang sedang login.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": { "type": "string", "example": "Budi Santoso" },
+                  "alamat": { "type": "string", "example": "Jl. Melati No.15" },
+                  "no_hp": { "type": "string", "example": "081234567891" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profil berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Profil berhasil diperbarui." }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login atau token tidak valid",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "data": {}
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "code": { "type": "string" },
+          "errors": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    { "name": "Authentication", "description": "Endpoint autentikasi (login, logout)" },
+    { "name": "Dashboard", "description": "Dashboard berdasarkan role" },
+    { "name": "Residents", "description": "Kelola data warga, verifikasi, dan pengurus RT" },
+    { "name": "Businesses", "description": "Kelola dan validasi UMKM" },
+    { "name": "Dues - Master", "description": "Kelola data iuran (Ketua RT)" },
+    { "name": "Dues - Payments", "description": "Pembayaran dan verifikasi iuran" },
+    { "name": "Announcements", "description": "Kelola pengumuman" },
+    { "name": "Issues", "description": "Laporan kendala dan tindak lanjut" },
+    { "name": "Finance", "description": "Kelola pengeluaran kas" },
+    { "name": "Profile", "description": "Lihat dan perbarui profil" }
+  ]
+}
