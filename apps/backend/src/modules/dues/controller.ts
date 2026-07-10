@@ -39,7 +39,11 @@ export async function create(req: Request, res: Response) {
 
 export async function update(req: Request, res: Response) {
   try {
-    const result = await duesService.editIuran(req.params.dueId, req.body);
+    const result = await duesService.editIuran(
+      req.user!,
+      req.params.dueId,
+      req.body,
+    );
     res.json(result);
   } catch (err: any) {
     res.status(err.status || 500).json({
@@ -52,6 +56,7 @@ export async function update(req: Request, res: Response) {
 export async function toggleStatus(req: Request, res: Response) {
   try {
     const result = await duesService.toggleIuranStatus(
+      req.user!,
       req.params.dueId,
       req.body.status,
     );
@@ -90,7 +95,7 @@ export async function submitPayment(req: Request, res: Response) {
 
 export async function listPayments(req: Request, res: Response) {
   try {
-    const data = await duesService.listPayments();
+    const data = await duesService.listPayments(req.user!);
     res.json({ message: "success", data });
   } catch (err: any) {
     res.status(err.status || 500).json({
@@ -118,6 +123,7 @@ export async function getPaymentById(req: Request, res: Response) {
 export async function verifyPayment(req: Request, res: Response) {
   try {
     const result = await duesService.verifyPayment(
+      req.user!,
       req.params.paymentId,
       req.body.status,
     );

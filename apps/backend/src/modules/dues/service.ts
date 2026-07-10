@@ -1,5 +1,6 @@
 import * as duesRepository from "./repository.js";
 import type { AuthUser } from "../../middleware/auth.js";
+import { Decimal } from "@prisma/client/runtime/client";
 
 // ===================== Iuran (Master) =====================
 
@@ -11,13 +12,26 @@ export async function listIuran() {
     nominal: Number(i.nominal),
     tanggal_jatuh_tempo: i.tanggalJatuhTempo.toISOString().split("T")[0],
     status_aktif: i.statusAktif,
+    created_by: i.idKetuaRt,
   }));
 }
 
 export async function getIuranById(id: string) {
+  if (!id || typeof id !== "string" || id.trim() === "") {
+    throw {
+      status: 400,
+      message: "Invalid iuran ID",
+      code: "INVALID_ID",
+    };
+  }
+
   const iuran = await duesRepository.findIuranById(id);
   if (!iuran) {
-    throw { status: 404, message: "Data iuran tidak ditemukan", code: "NOT_FOUND" };
+    throw {
+      status: 404,
+      message: "Data iuran tidak ditemukan",
+      code: "NOT_FOUND",
+    };
   }
   return {
     id: iuran.idIuran,
@@ -25,93 +39,270 @@ export async function getIuranById(id: string) {
     nominal: Number(iuran.nominal),
     tanggal_jatuh_tempo: iuran.tanggalJatuhTempo.toISOString().split("T")[0],
     status_aktif: iuran.statusAktif,
+    created_by: iuran.idKetuaRt,
   };
 }
 
 export async function addIuran(
   user: AuthUser,
-  payload: { nama_iuran: string; nominal: number; tanggal_jatuh_tempo: string },
+  payload: {
+    nama_iuran: string;
+    nominal: number;
+    tanggal_jatuh_tempo: string;
+  },
 ) {
+  // Authorization check
+  if (user.role !== "CHAIRPERSON" || !user.idPengurus) {
+    throw {
+      status: 403,
+      message: "Only chairperson can create iuran",
+      code: "FORBIDDEN",
+    };
+  }
+
   const { nama_iuran, nominal, tanggal_jatuh_tempo } = payload;
+  const errors: string[] = [];
 
-  if (!nama_iuran) {
-    throw { status: 400, message: "nama_iuran is required", code: "VALIDATION_ERROR" };
+  if (!nama_iuran || !nama_iuran.trim()) {
+    errors.push("nama_iuran is required");
+  } else if (nama_iuran.trim().length > 40) {
+    errors.push("nama_iuran must be at most 40 characters");
   }
-  if (nominal === undefined || nominal === null || isNaN(Number(nominal)) || Number(nominal) < 0) {
-    throw { status: 400, message: "nominal must be a valid positive number", code: "VALIDATION_ERROR" };
+
+  if (
+    nominal === undefined ||
+    nominal === null ||
+    isNaN(Number(nominal)) ||
+    Number(nominal) <= 0
+  ) {
+    errors.push("nominal must be a valid positive number");
   }
+
   if (!tanggal_jatuh_tempo || isNaN(Date.parse(tanggal_jatuh_tempo))) {
-    throw { status: 400, message: "tanggal_jatuh_tempo must be a valid date", code: "VALIDATION_ERROR" };
+    errors.push("tanggal_jatuh_tempo must be a valid date (YYYY-MM-DD)");
+  } else {
+    // Validate date is not in the past
+    const inputDate = new Date(tanggal_jatuh_tempo);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (inputDate < today) {
+      errors.push("tanggal_jatuh_tempo cannot be in the past");
+    }
   }
 
-  await duesRepository.createIuran(user.idPengurus!, {
-    namaIuran: nama_iuran,
-    nominal: Number(nominal),
+  if (errors.length > 0) {
+    throw {
+      status: 400,
+      message: errors.join(", "),
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  const result = await duesRepository.createIuran(user.idPengurus, {
+    namaIuran: nama_iuran.trim(),
+    nominal: new Decimal(nominal),
     tanggalJatuhTempo: new Date(tanggal_jatuh_tempo),
   });
 
-  return { message: "Data iuran berhasil ditambahkan." };
+  return {
+    message: "Data iuran berhasil ditambahkan.",
+    data: {
+      id: result.idIuran,
+      nama_iuran: result.namaIuran,
+      nominal: Number(result.nominal),
+      tanggal_jatuh_tempo: result.tanggalJatuhTempo.toISOString().split("T")[0],
+      status_aktif: result.statusAktif,
+    },
+  };
 }
 
 export async function editIuran(
+  user: AuthUser,
   id: string,
-  payload: { nama_iuran?: string; nominal?: number; tanggal_jatuh_tempo?: string },
+  payload: {
+    nama_iuran?: string;
+    nominal?: number;
+    tanggal_jatuh_tempo?: string;
+  },
 ) {
+  // Authorization check
+  if (user.role !== "CHAIRPERSON" || !user.idPengurus) {
+    throw {
+      status: 403,
+      message: "Only chairperson can update iuran",
+      code: "FORBIDDEN",
+    };
+  }
+
+  if (!id || typeof id !== "string" || id.trim() === "") {
+    throw {
+      status: 400,
+      message: "Invalid iuran ID",
+      code: "INVALID_ID",
+    };
+  }
+
   const existing = await duesRepository.findIuranById(id);
   if (!existing) {
-    throw { status: 404, message: "Data iuran tidak ditemukan", code: "NOT_FOUND" };
+    throw {
+      status: 404,
+      message: "Data iuran tidak ditemukan",
+      code: "NOT_FOUND",
+    };
+  }
+
+  // Verify ownership - only creator can edit
+  if (existing.idKetuaRt !== user.idPengurus) {
+    throw {
+      status: 403,
+      message: "You can only edit your own iuran",
+      code: "FORBIDDEN",
+    };
   }
 
   if (Object.keys(payload).length === 0) {
-    throw { status: 400, message: "at least one field must be provided", code: "VALIDATION_ERROR" };
+    throw {
+      status: 400,
+      message: "at least one field must be provided",
+      code: "VALIDATION_ERROR",
+    };
   }
 
-  const data: { namaIuran?: string; nominal?: number; tanggalJatuhTempo?: Date } = {};
-  if (payload.nama_iuran !== undefined) data.namaIuran = payload.nama_iuran;
-  if (payload.nominal !== undefined) {
-    if (isNaN(Number(payload.nominal)) || Number(payload.nominal) < 0) {
-      throw { status: 400, message: "nominal must be a valid positive number", code: "VALIDATION_ERROR" };
+  const data: {
+    namaIuran?: string;
+    nominal?: Decimal;
+    tanggalJatuhTempo?: Date;
+  } = {};
+  const errors: string[] = [];
+
+  if (payload.nama_iuran !== undefined) {
+    if (!payload.nama_iuran.trim()) {
+      errors.push("nama_iuran cannot be empty");
+    } else if (payload.nama_iuran.trim().length > 40) {
+      errors.push("nama_iuran must be at most 40 characters");
+    } else {
+      data.namaIuran = payload.nama_iuran.trim();
     }
-    data.nominal = Number(payload.nominal);
   }
+
+  if (payload.nominal !== undefined) {
+    if (isNaN(Number(payload.nominal)) || Number(payload.nominal) <= 0) {
+      errors.push("nominal must be a valid positive number");
+    } else {
+      data.nominal = new Decimal(payload.nominal);
+    }
+  }
+
   if (payload.tanggal_jatuh_tempo !== undefined) {
     if (isNaN(Date.parse(payload.tanggal_jatuh_tempo))) {
-      throw { status: 400, message: "tanggal_jatuh_tempo must be a valid date", code: "VALIDATION_ERROR" };
+      errors.push("tanggal_jatuh_tempo must be a valid date (YYYY-MM-DD)");
+    } else {
+      const inputDate = new Date(payload.tanggal_jatuh_tempo);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (inputDate < today) {
+        errors.push("tanggal_jatuh_tempo cannot be in the past");
+      } else {
+        data.tanggalJatuhTempo = inputDate;
+      }
     }
-    data.tanggalJatuhTempo = new Date(payload.tanggal_jatuh_tempo);
   }
 
-  await duesRepository.updateIuran(id, data);
-  return { message: "Data iuran berhasil diperbarui." };
+  if (errors.length > 0) {
+    throw {
+      status: 400,
+      message: errors.join(", "),
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  const result = await duesRepository.updateIuran(id, data);
+  return {
+    message: "Data iuran berhasil diperbarui.",
+    data: {
+      id: result.idIuran,
+      nama_iuran: result.namaIuran,
+      nominal: Number(result.nominal),
+      tanggal_jatuh_tempo: result.tanggalJatuhTempo.toISOString().split("T")[0],
+      status_aktif: result.statusAktif,
+    },
+  };
 }
 
-export async function toggleIuranStatus(id: string, status: string) {
+export async function toggleIuranStatus(
+  user: AuthUser,
+  id: string,
+  status: string,
+) {
+  // Authorization check
+  if (user.role !== "CHAIRPERSON" || !user.idPengurus) {
+    throw {
+      status: 403,
+      message: "Only chairperson can toggle iuran status",
+      code: "FORBIDDEN",
+    };
+  }
+
+  if (!id || typeof id !== "string" || id.trim() === "") {
+    throw {
+      status: 400,
+      message: "Invalid iuran ID",
+      code: "INVALID_ID",
+    };
+  }
+
   if (!["ACTIVE", "INACTIVE"].includes(status)) {
-    throw { status: 400, message: "Status must be ACTIVE or INACTIVE", code: "VALIDATION_ERROR" };
+    throw {
+      status: 400,
+      message: "Status must be ACTIVE or INACTIVE",
+      code: "VALIDATION_ERROR",
+    };
   }
 
   const existing = await duesRepository.findIuranById(id);
   if (!existing) {
-    throw { status: 404, message: "Data iuran tidak ditemukan", code: "NOT_FOUND" };
+    throw {
+      status: 404,
+      message: "Data iuran tidak ditemukan",
+      code: "NOT_FOUND",
+    };
   }
 
-  await duesRepository.updateIuranStatus(id, status === "ACTIVE");
-  return { message: "Status iuran berhasil diperbarui." };
+  // Verify ownership
+  if (existing.idKetuaRt !== user.idPengurus) {
+    throw {
+      status: 403,
+      message: "You can only toggle your own iuran status",
+      code: "FORBIDDEN",
+    };
+  }
+
+  const result = await duesRepository.updateIuranStatus(
+    id,
+    status === "ACTIVE",
+  );
+  return {
+    message: "Status iuran berhasil diperbarui.",
+    data: {
+      id: result.idIuran,
+      status_aktif: result.statusAktif,
+    },
+  };
 }
 
 // ===================== Bills (Tagihan) =====================
 
 export async function getBills(user: AuthUser) {
   if (!user.idWarga) {
-    throw { status: 400, message: "Hanya warga yang dapat melihat tagihan", code: "FORBIDDEN" };
+    throw {
+      status: 403,
+      message: "Hanya warga yang dapat melihat tagihan",
+      code: "FORBIDDEN",
+    };
   }
 
   const activeIuran = await duesRepository.findIuranAktif();
   const payments = await duesRepository.findPaymentsByWargaId(user.idWarga);
-
-  const paidKeys = new Set(
-    payments.map((p) => `${p.idIuran}-${p.periode}`),
-  );
 
   const statusMap = new Map<string, string>();
   for (const p of payments) {
@@ -121,7 +312,7 @@ export async function getBills(user: AuthUser) {
     } else if (p.statusVerifikasi === "Menunggu") {
       if (!statusMap.has(key)) statusMap.set(key, "PENDING");
     } else if (p.statusVerifikasi === "Ditolak") {
-      if (!statusMap.has(key)) statusMap.set(key, "REJECTED");
+      statusMap.set(key, "REJECTED");
     }
   }
 
@@ -139,23 +330,15 @@ export async function getBills(user: AuthUser) {
   for (const iuran of activeIuran) {
     for (const periode of periods) {
       const key = `${iuran.idIuran}-${periode}`;
-      if (paidKeys.has(key)) {
-        bills.push({
-          id_iuran: iuran.idIuran,
-          nama_iuran: iuran.namaIuran,
-          periode,
-          nominal: Number(iuran.nominal),
-          status: statusMap.get(key) || "BELUM_DIBAYAR",
-        });
-      } else {
-        bills.push({
-          id_iuran: iuran.idIuran,
-          nama_iuran: iuran.namaIuran,
-          periode,
-          nominal: Number(iuran.nominal),
-          status: "BELUM_DIBAYAR",
-        });
-      }
+      const status = statusMap.get(key) || "BELUM_DIBAYAR";
+
+      bills.push({
+        id_iuran: iuran.idIuran,
+        nama_iuran: iuran.namaIuran,
+        periode,
+        nominal: Number(iuran.nominal),
+        status,
+      });
     }
   }
 
@@ -175,20 +358,78 @@ export async function addPayment(
   },
 ) {
   if (!user.idWarga) {
-    throw { status: 400, message: "Hanya warga yang dapat melakukan pembayaran", code: "FORBIDDEN" };
+    throw {
+      status: 403,
+      message: "Hanya warga yang dapat melakukan pembayaran",
+      code: "FORBIDDEN",
+    };
   }
 
-  const { id_iuran, periode, metode_bayar, jumlah_bayar, bukti_pembayaran } = payload;
+  const { id_iuran, periode, metode_bayar, jumlah_bayar, bukti_pembayaran } =
+    payload;
+  const errors: string[] = [];
 
-  if (!id_iuran || !periode || !metode_bayar || !jumlah_bayar || !bukti_pembayaran) {
-    throw { status: 400, message: "Semua field wajib diisi", code: "VALIDATION_ERROR" };
+  // Validate all required fields
+  if (!id_iuran || typeof id_iuran !== "string" || id_iuran.trim() === "") {
+    errors.push("id_iuran is required and must be valid");
+  }
+
+  if (!periode || typeof periode !== "string" || periode.trim() === "") {
+    errors.push("periode is required");
+  } else if (!/^\d{4}-\d{2}$/.test(periode)) {
+    errors.push("periode must be in YYYY-MM format");
+  }
+
+  if (
+    !metode_bayar ||
+    typeof metode_bayar !== "string" ||
+    metode_bayar.trim() === ""
+  ) {
+    errors.push("metode_bayar is required");
+  } else if (metode_bayar.trim().length > 15) {
+    errors.push("metode_bayar must be at most 15 characters");
+  }
+
+  if (
+    jumlah_bayar === undefined ||
+    jumlah_bayar === null ||
+    isNaN(Number(jumlah_bayar)) ||
+    Number(jumlah_bayar) <= 0
+  ) {
+    errors.push("jumlah_bayar must be a valid positive number");
+  }
+
+  if (!bukti_pembayaran || typeof bukti_pembayaran !== "string") {
+    errors.push("bukti_pembayaran is required");
+  }
+
+  if (errors.length > 0) {
+    throw {
+      status: 400,
+      message: errors.join(", "),
+      code: "VALIDATION_ERROR",
+    };
   }
 
   const iuran = await duesRepository.findIuranById(id_iuran);
   if (!iuran) {
-    throw { status: 404, message: "Data iuran tidak ditemukan", code: "NOT_FOUND" };
+    throw {
+      status: 404,
+      message: "Data iuran tidak ditemukan",
+      code: "NOT_FOUND",
+    };
   }
 
+  // Verify amount matches iuran nominal
+  if (Number(jumlah_bayar) !== Number(iuran.nominal)) {
+    throw {
+      status: 400,
+      message: `jumlah_bayar must match iuran nominal (${Number(iuran.nominal)})`,
+      code: "VALIDATION_ERROR",
+    };
+  }
+
+  // Check if payment already exists
   const existing = await duesRepository.findPaymentByWargaAndIuranAndPeriode(
     user.idWarga,
     id_iuran,
@@ -202,22 +443,42 @@ export async function addPayment(
     };
   }
 
-  await duesRepository.createPayment({
+  const result = await duesRepository.createPayment({
     idWarga: user.idWarga,
     idIuran: id_iuran,
     periode,
     idPengurus: iuran.idKetuaRt,
     tanggalBayar: new Date(),
-    metodeBayar: metode_bayar,
-    jumlahBayar: Number(jumlah_bayar),
-    buktiPembayaran: bukti_pembayaran,
+    metodeBayar: metode_bayar.trim(),
+    jumlahBayar: new Decimal(jumlah_bayar),
+    buktiPembayaran: bukti_pembayaran.trim(),
     statusVerifikasi: "Menunggu",
   });
 
-  return { message: "Pembayaran berhasil dikirim." };
+  return {
+    message: "Pembayaran berhasil dikirim.",
+    data: {
+      id_pembayaran: result.idPembayaran,
+      periode: result.periode,
+      jumlah_bayar: Number(result.jumlahBayar),
+      status_verifikasi: result.statusVerifikasi,
+    },
+  };
 }
 
-export async function listPayments() {
+export async function listPayments(user: AuthUser) {
+  // Authorization check - only officers and chairperson can view all payments
+  if (
+    !user.idPengurus ||
+    (user.role !== "OFFICER" && user.role !== "CHAIRPERSON")
+  ) {
+    throw {
+      status: 403,
+      message: "Only officers can view all payments",
+      code: "FORBIDDEN",
+    };
+  }
+
   const data = await duesRepository.findAllPayments();
   return data.map((p) => ({
     id_pembayaran: p.idPembayaran,
@@ -225,18 +486,37 @@ export async function listPayments() {
     nama_iuran: p.iuran.namaIuran,
     periode: p.periode,
     jumlah_bayar: Number(p.jumlahBayar),
+    tanggal_bayar: p.tanggalBayar.toISOString().split("T")[0],
     status_verifikasi: p.statusVerifikasi,
   }));
 }
 
 export async function getPaymentById(id: string, user: AuthUser) {
-  const payment = await duesRepository.findPaymentById(id);
-  if (!payment) {
-    throw { status: 404, message: "Data pembayaran tidak ditemukan", code: "NOT_FOUND" };
+  if (!id || typeof id !== "string" || id.trim() === "") {
+    throw {
+      status: 400,
+      message: "Invalid payment ID",
+      code: "INVALID_ID",
+    };
   }
 
+  const payment = await duesRepository.findPaymentById(id);
+  if (!payment) {
+    throw {
+      status: 404,
+      message: "Data pembayaran tidak ditemukan",
+      code: "NOT_FOUND",
+    };
+  }
+
+  // Residents can only view their own payments
+  // Officers/Chairpersons can view any payment
   if (user.role === "RESIDENT" && payment.idWarga !== user.idWarga) {
-    throw { status: 403, message: "Tidak memiliki akses", code: "FORBIDDEN" };
+    throw {
+      status: 403,
+      message: "Tidak memiliki akses",
+      code: "FORBIDDEN",
+    };
   }
 
   return {
@@ -252,24 +532,67 @@ export async function getPaymentById(id: string, user: AuthUser) {
   };
 }
 
-export async function verifyPayment(id: string, status: string) {
+export async function verifyPayment(
+  user: AuthUser,
+  id: string,
+  status: string,
+) {
+  // Authorization check - only officers and chairperson can verify
+  if (
+    !user.idPengurus ||
+    (user.role !== "OFFICER" && user.role !== "CHAIRPERSON")
+  ) {
+    throw {
+      status: 403,
+      message: "Only officers can verify payments",
+      code: "FORBIDDEN",
+    };
+  }
+
+  if (!id || typeof id !== "string" || id.trim() === "") {
+    throw {
+      status: 400,
+      message: "Invalid payment ID",
+      code: "INVALID_ID",
+    };
+  }
+
   if (!["VERIFIED", "REJECTED"].includes(status)) {
-    throw { status: 400, message: "Status must be VERIFIED or REJECTED", code: "VALIDATION_ERROR" };
+    throw {
+      status: 400,
+      message: "Status must be VERIFIED or REJECTED",
+      code: "VALIDATION_ERROR",
+    };
   }
 
   const payment = await duesRepository.findPaymentById(id);
   if (!payment) {
-    throw { status: 404, message: "Data pembayaran tidak ditemukan", code: "NOT_FOUND" };
+    throw {
+      status: 404,
+      message: "Data pembayaran tidak ditemukan",
+      code: "NOT_FOUND",
+    };
   }
 
   const mappedStatus = status === "VERIFIED" ? "Terverifikasi" : "Ditolak";
-  await duesRepository.updatePaymentStatus(id, mappedStatus);
-  return { message: "Status pembayaran berhasil diperbarui." };
+  const result = await duesRepository.updatePaymentStatus(id, mappedStatus);
+
+  return {
+    message: "Status pembayaran berhasil diperbarui.",
+    data: {
+      id_pembayaran: result.idPembayaran,
+      status_verifikasi: result.statusVerifikasi,
+    },
+  };
 }
 
 export async function getMyPayments(user: AuthUser) {
   if (!user.idWarga) {
-    throw { status: 400, message: "Hanya warga yang dapat melihat riwayat pembayaran", code: "FORBIDDEN" };
+    throw {
+      status: 403,
+      message: "Hanya warga yang dapat melihat riwayat pembayaran",
+      code: "FORBIDDEN",
+    };
   }
 
   const data = await duesRepository.findPaymentsByWargaId(user.idWarga);
