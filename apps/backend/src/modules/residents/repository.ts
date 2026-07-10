@@ -1,7 +1,7 @@
 import { prisma } from '../../db/prisma.js';
 
 export async function createMasyarakat(data: {
-  nik: string; nama: string; alamat: string; noHp: string; username: string; password: string;
+  nik: string; email: string; nama: string; alamat: string; noHp: string; username: string; password: string;
 }) {
   return prisma.masyarakat.create({ data });
 }
@@ -12,6 +12,10 @@ export async function createWarga(data: { idMasyarakat: string; statusKeanggotaa
 
 export async function findMasyarakatByNik(nik: string) {
   return prisma.masyarakat.findUnique({ where: { nik } });
+}
+
+export async function findMasyarakatByEmail(email: string) {
+  return prisma.masyarakat.findUnique({ where: { email } });
 }
 
 export async function findMasyarakatByUsername(username: string) {
