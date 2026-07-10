@@ -3,15 +3,20 @@ import * as residentRepository from './repository.js';
 import type { AuthUser } from '../../middleware/auth.js';
 
 export async function register(data: {
-  nik: string; nama: string; alamat: string; no_hp: string; username: string; password: string;
+  nik: string; email: string; nama: string; alamat: string; no_hp: string; username: string; password: string;
 }) {
-  if (!data.nik || !data.nama || !data.alamat || !data.no_hp || !data.username || !data.password) {
+  if (!data.nik || !data.email || !data.nama || !data.alamat || !data.no_hp || !data.username || !data.password) {
     throw { status: 400, message: 'Semua field wajib diisi', code: 'VALIDATION_ERROR' };
   }
 
   const existingNik = await residentRepository.findMasyarakatByNik(data.nik);
   if (existingNik) {
     throw { status: 409, message: 'NIK sudah terdaftar', code: 'CONFLICT' };
+  }
+
+  const existingEmail = await residentRepository.findMasyarakatByEmail(data.email);
+  if (existingEmail) {
+    throw { status: 409, message: 'Email sudah terdaftar', code: 'CONFLICT' };
   }
 
   const existingUsername = await residentRepository.findMasyarakatByUsername(data.username);
@@ -23,6 +28,7 @@ export async function register(data: {
 
   const masyarakat = await residentRepository.createMasyarakat({
     nik: data.nik,
+    email: data.email,
     nama: data.nama,
     alamat: data.alamat,
     noHp: data.no_hp,

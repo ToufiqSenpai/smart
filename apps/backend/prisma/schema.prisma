@@ -16,6 +16,7 @@ datasource db {
 model Masyarakat {
   idMasyarakat String  @id @default(uuid()) @map("id_masyarakat") @db.VarChar(36)
   nik          String  @unique @db.VarChar(36)
+  email        String  @unique @db.VarChar(255)
   nama         String  @db.VarChar(36)
   alamat       String  @db.Text
   noHp         String  @map("no_hp") @db.VarChar(14)
