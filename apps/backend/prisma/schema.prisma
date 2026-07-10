@@ -155,19 +155,19 @@ model LaporanKendala {
 
 // 9. Tabel UMKM
 model Umkm {
-  idUmkm           String  @id @default(uuid()) @map("id_umkm") @db.VarChar(36)
-  idWarga          String  @map("id_warga") @db.VarChar(36)
-  idPengurus       String  @map("id_pengurus") @db.VarChar(36)
-  namaUsaha        String  @map("nama_usaha") @db.VarChar(15)
-  jenisUsaha       String  @map("jenis_usaha") @db.VarChar(10)
-  deskripsiUsaha   String  @map("deskripsi_usaha") @db.Text
-  alamatUsaha      String  @map("alamat_usaha") @db.Text
-  kontakUsaha      String  @map("kontak_usaha") @db.VarChar(15)
-  fotoUsaha        String? @map("foto_usaha") @db.Text
-  statusVerifikasi String  @map("status_verifikasi") @db.VarChar(12)
+  idUmkm           String   @id @default(uuid()) @map("id_umkm") @db.VarChar(36)
+  idWarga          String   @map("id_warga") @db.VarChar(36)
+  idPengurus       String?  @map("id_pengurus") @db.VarChar(36)
+  namaUsaha        String   @map("nama_usaha") @db.VarChar(15)
+  jenisUsaha       String   @map("jenis_usaha") @db.VarChar(10)
+  deskripsiUsaha   String   @map("deskripsi_usaha") @db.Text
+  alamatUsaha      String   @map("alamat_usaha") @db.Text
+  kontakUsaha      String   @map("kontak_usaha") @db.VarChar(15)
+  fotoUsaha        String?  @map("foto_usaha") @db.Text
+  statusVerifikasi String   @map("status_verifikasi") @db.VarChar(12)
 
   warga            Warga      @relation(fields: [idWarga], references: [idWarga])
-  pengurus         PengurusRt @relation(fields: [idPengurus], references: [idPengurus])
+  pengurus         PengurusRt? @relation(fields: [idPengurus], references: [idPengurus])
 
   @@map("umkm")
 }
