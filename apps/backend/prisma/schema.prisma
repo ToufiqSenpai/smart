@@ -16,6 +16,7 @@ datasource db {
 model Masyarakat {
   idMasyarakat String  @id @default(uuid()) @map("id_masyarakat") @db.VarChar(36)
   nik          String  @unique @db.VarChar(36)
+  email        String  @unique @db.VarChar(255)
   nama         String  @db.VarChar(36)
   alamat       String  @db.Text
   noHp         String  @map("no_hp") @db.VarChar(14)
@@ -138,7 +139,7 @@ model Pengumuman {
 model LaporanKendala {
   idLaporan       String   @id @default(uuid()) @map("id_laporan") @db.VarChar(36)
   idWarga         String   @map("id_warga") @db.VarChar(36)
-  idPengurus      String   @map("id_pengurus") @db.VarChar(36)
+  idPengurus      String?   @map("id_pengurus") @db.VarChar(36)
   kategoriKendala String   @map("kategori_kendala") @db.VarChar(15)
   deskripsi       String   @db.Text
   fotoKendala     String?  @map("foto_kendala") @db.Text
@@ -146,27 +147,27 @@ model LaporanKendala {
   statusLaporan   String   @map("status_laporan") @db.VarChar(10)
   tanggapan       String?  @db.Text
 
-  warga           Warga      @relation(fields: [idWarga], references: [idWarga])
-  pengurus        PengurusRt @relation(fields: [idPengurus], references: [idPengurus])
+  warga           Warga       @relation(fields: [idWarga], references: [idWarga])
+  pengurus        PengurusRt? @relation(fields: [idPengurus], references: [idPengurus])
 
   @@map("laporan_kendala")
 }
 
 // 9. Tabel UMKM
 model Umkm {
-  idUmkm           String  @id @default(uuid()) @map("id_umkm") @db.VarChar(36)
-  idWarga          String  @map("id_warga") @db.VarChar(36)
-  idPengurus       String  @map("id_pengurus") @db.VarChar(36)
-  namaUsaha        String  @map("nama_usaha") @db.VarChar(15)
-  jenisUsaha       String  @map("jenis_usaha") @db.VarChar(10)
-  deskripsiUsaha   String  @map("deskripsi_usaha") @db.Text
-  alamatUsaha      String  @map("alamat_usaha") @db.Text
-  kontakUsaha      String  @map("kontak_usaha") @db.VarChar(15)
-  fotoUsaha        String? @map("foto_usaha") @db.Text
-  statusVerifikasi String  @map("status_verifikasi") @db.VarChar(12)
+  idUmkm           String   @id @default(uuid()) @map("id_umkm") @db.VarChar(36)
+  idWarga          String   @map("id_warga") @db.VarChar(36)
+  idPengurus       String?  @map("id_pengurus") @db.VarChar(36)
+  namaUsaha        String   @map("nama_usaha") @db.VarChar(15)
+  jenisUsaha       String   @map("jenis_usaha") @db.VarChar(10)
+  deskripsiUsaha   String   @map("deskripsi_usaha") @db.Text
+  alamatUsaha      String   @map("alamat_usaha") @db.Text
+  kontakUsaha      String   @map("kontak_usaha") @db.VarChar(15)
+  fotoUsaha        String?  @map("foto_usaha") @db.Text
+  statusVerifikasi String   @map("status_verifikasi") @db.VarChar(12)
 
   warga            Warga      @relation(fields: [idWarga], references: [idWarga])
-  pengurus         PengurusRt @relation(fields: [idPengurus], references: [idPengurus])
+  pengurus         PengurusRt? @relation(fields: [idPengurus], references: [idPengurus])
 
   @@map("umkm")
 }
