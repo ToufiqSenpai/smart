@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <!-- Brand-Consistent Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0052FF" />
+      <stop offset="60%" stop-color="#0031A5" />
+      <stop offset="100%" stop-color="#0A1020" />
+    </linearGradient>
+    
+    <!-- Connected Network Accent Gradient -->
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="100%" stop-color="#70A3FF" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base Container -->
+  <rect width="128" height="128" rx="32" fill="url(#bgGrad)" />
+
+  <!-- Premium Subtle Inner Glass Border -->
+  <rect x="4" y="4" width="120" height="120" rx="28" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1.5" />
+
+  <!-- Neighborhood & Administration Network Group -->
+  <g transform="translate(0, 4)">
+    <!-- Left House (Neighbor) -->
+    <path d="M26 80 V58 L46 42 L66 58 V80 Z" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+    
+    <!-- Right House (Neighbor) -->
+    <path d="M62 80 V58 L82 42 L102 58 V80 Z" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+    
+    <!-- Center House (Main RT Hub) -->
+    <path d="M40 84 V52 L64 32 L88 52 V84 Z" fill="#0031A5" fill-opacity="0.2" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" />
+
+    <!-- Connected Admin Network Lines -->
+    <path d="M46 66 H82" stroke="url(#accentGrad)" stroke-width="3" stroke-linecap="round" />
+    <path d="M64 56 V76" stroke="url(#accentGrad)" stroke-width="3" stroke-linecap="round" />
+    
+    <!-- Smart Nodes / Connectivity Intersections -->
+    <circle cx="46" cy="66" r="4.5" fill="#00F0FF" stroke="#ffffff" stroke-width="1.5" />
+    <circle cx="82" cy="66" r="4.5" fill="#70A3FF" stroke="#ffffff" stroke-width="1.5" />
+    <circle cx="64" cy="56" r="4.5" fill="#00F0FF" stroke="#ffffff" stroke-width="1.5" />
+    <circle cx="64" cy="76" r="4.5" fill="#70A3FF" stroke="#ffffff" stroke-width="1.5" />
+  </g>
+</svg>

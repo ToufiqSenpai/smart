@@ -2,9 +2,10 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useLocalStorage } from 'usehooks-ts'
 import http from '../utils/http'
+import smartLogo from '../assets/smart-logo.svg'
 
 export const Route = createFileRoute('/login')({
   component: Login,
@@ -22,7 +23,9 @@ function Login() {
         const response = await http.post('/auth/login', payload)
         return response.data
       } catch (error: any) {
-        const errMsg = error.response?.data?.message || 'Gagal masuk. Silakan periksa kembali email dan kata sandi Anda.'
+        const errMsg =
+          error.response?.data?.message ||
+          'Gagal masuk. Silakan periksa kembali email dan kata sandi Anda.'
         throw new Error(errMsg)
       }
     },
@@ -54,12 +57,13 @@ function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-4 font-sans">
       <div className="w-full max-w-[460px] bg-white rounded-2xl border border-slate-100 p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-
         {/* Header / Logo */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-14 h-14 bg-[#0047cc] rounded-2xl flex items-center justify-center text-white mb-4 shadow-[0_8px_20px_rgba(0,71,204,0.25)]">
-            <Shield className="w-7 h-7" fill="currentColor" fillOpacity={0.2} />
-          </div>
+          <img
+            src={smartLogo}
+            alt="SMART Logo"
+            className="w-14 h-14 mb-4 drop-shadow-[0_8px_20px_rgba(0,71,204,0.2)]"
+          />
           <span className="text-[#0047cc] font-extrabold text-sm tracking-wider uppercase mb-1">
             SMART
           </span>
@@ -118,17 +122,20 @@ function Login() {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="nama@email.com"
-                    className={`w-full bg-[#f4f7fc] border ${field.state.meta.isTouched && field.state.meta.errors.length
+                    className={`w-full bg-[#f4f7fc] border ${
+                      field.state.meta.isTouched &&
+                      field.state.meta.errors.length
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500/10'
                         : 'border-slate-200/80 focus:border-[#0047cc] focus:ring-[#0047cc]/10'
-                      } rounded-xl py-2.5 pl-11 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 text-sm transition-all`}
+                    } rounded-xl py-2.5 pl-11 pr-4 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 text-sm transition-all`}
                   />
                 </div>
-                {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                  <p className="mt-1 text-red-500 text-[10px] font-medium leading-none">
-                    {field.state.meta.errors[0]}
-                  </p>
-                )}
+                {field.state.meta.isTouched &&
+                  field.state.meta.errors.length > 0 && (
+                    <p className="mt-1 text-red-500 text-[10px] font-medium leading-none">
+                      {field.state.meta.errors[0]}
+                    </p>
+                  )}
               </div>
             )}
           />
@@ -161,10 +168,12 @@ function Login() {
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="••••••••"
-                    className={`w-full bg-[#f4f7fc] border ${field.state.meta.isTouched && field.state.meta.errors.length
+                    className={`w-full bg-[#f4f7fc] border ${
+                      field.state.meta.isTouched &&
+                      field.state.meta.errors.length
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500/10'
                         : 'border-slate-200/80 focus:border-[#0047cc] focus:ring-[#0047cc]/10'
-                      } rounded-xl py-2.5 pl-11 pr-11 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 text-sm transition-all`}
+                    } rounded-xl py-2.5 pl-11 pr-11 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 text-sm transition-all`}
                   />
                   <button
                     type="button"
@@ -178,11 +187,12 @@ function Login() {
                     )}
                   </button>
                 </div>
-                {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                  <p className="mt-1 text-red-500 text-[10px] font-medium leading-none">
-                    {field.state.meta.errors[0]}
-                  </p>
-                )}
+                {field.state.meta.isTouched &&
+                  field.state.meta.errors.length > 0 && (
+                    <p className="mt-1 text-red-500 text-[10px] font-medium leading-none">
+                      {field.state.meta.errors[0]}
+                    </p>
+                  )}
               </div>
             )}
           />
