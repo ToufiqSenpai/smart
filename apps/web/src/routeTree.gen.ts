@@ -13,10 +13,17 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardIndexRouteImport } from './routes/_dashboard.index'
 import { Route as DashboardProfileRouteImport } from './routes/_dashboard.profile'
-import { Route as DashboardMarketplaceRouteImport } from './routes/_dashboard.marketplace'
-import { Route as DashboardContributionsRouteImport } from './routes/_dashboard.contributions'
-import { Route as DashboardComplaintsRouteImport } from './routes/_dashboard.complaints'
-import { Route as DashboardAnnouncementsRouteImport } from './routes/_dashboard.announcements'
+import { Route as DashboardMarketplaceIndexRouteImport } from './routes/_dashboard.marketplace.index'
+import { Route as DashboardContributionsIndexRouteImport } from './routes/_dashboard.contributions.index'
+import { Route as DashboardComplaintsIndexRouteImport } from './routes/_dashboard.complaints.index'
+import { Route as DashboardAnnouncementsIndexRouteImport } from './routes/_dashboard.announcements.index'
+import { Route as DashboardResidentsWargaRouteImport } from './routes/_dashboard.residents.warga'
+import { Route as DashboardResidentsPengurusRouteImport } from './routes/_dashboard.residents.pengurus'
+import { Route as DashboardMarketplaceValidasiRouteImport } from './routes/_dashboard.marketplace.validasi'
+import { Route as DashboardContributionsPengeluaranRouteImport } from './routes/_dashboard.contributions.pengeluaran'
+import { Route as DashboardContributionsKelolaRouteImport } from './routes/_dashboard.contributions.kelola'
+import { Route as DashboardComplaintsWargaRouteImport } from './routes/_dashboard.complaints.warga'
+import { Route as DashboardAnnouncementsTambahRouteImport } from './routes/_dashboard.announcements.tambah'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -37,85 +44,172 @@ const DashboardProfileRoute = DashboardProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardMarketplaceRoute = DashboardMarketplaceRouteImport.update({
-  id: '/marketplace',
-  path: '/marketplace',
+const DashboardMarketplaceIndexRoute =
+  DashboardMarketplaceIndexRouteImport.update({
+    id: '/marketplace/',
+    path: '/marketplace/',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardContributionsIndexRoute =
+  DashboardContributionsIndexRouteImport.update({
+    id: '/contributions/',
+    path: '/contributions/',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardComplaintsIndexRoute =
+  DashboardComplaintsIndexRouteImport.update({
+    id: '/complaints/',
+    path: '/complaints/',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardAnnouncementsIndexRoute =
+  DashboardAnnouncementsIndexRouteImport.update({
+    id: '/announcements/',
+    path: '/announcements/',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardResidentsWargaRoute = DashboardResidentsWargaRouteImport.update({
+  id: '/residents/warga',
+  path: '/residents/warga',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardContributionsRoute = DashboardContributionsRouteImport.update({
-  id: '/contributions',
-  path: '/contributions',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardComplaintsRoute = DashboardComplaintsRouteImport.update({
-  id: '/complaints',
-  path: '/complaints',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardAnnouncementsRoute = DashboardAnnouncementsRouteImport.update({
-  id: '/announcements',
-  path: '/announcements',
-  getParentRoute: () => DashboardRoute,
-} as any)
+const DashboardResidentsPengurusRoute =
+  DashboardResidentsPengurusRouteImport.update({
+    id: '/residents/pengurus',
+    path: '/residents/pengurus',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardMarketplaceValidasiRoute =
+  DashboardMarketplaceValidasiRouteImport.update({
+    id: '/marketplace/validasi',
+    path: '/marketplace/validasi',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardContributionsPengeluaranRoute =
+  DashboardContributionsPengeluaranRouteImport.update({
+    id: '/contributions/pengeluaran',
+    path: '/contributions/pengeluaran',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardContributionsKelolaRoute =
+  DashboardContributionsKelolaRouteImport.update({
+    id: '/contributions/kelola',
+    path: '/contributions/kelola',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardComplaintsWargaRoute =
+  DashboardComplaintsWargaRouteImport.update({
+    id: '/complaints/warga',
+    path: '/complaints/warga',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardAnnouncementsTambahRoute =
+  DashboardAnnouncementsTambahRouteImport.update({
+    id: '/announcements/tambah',
+    path: '/announcements/tambah',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof DashboardIndexRoute
   '/login': typeof LoginRoute
-  '/announcements': typeof DashboardAnnouncementsRoute
-  '/complaints': typeof DashboardComplaintsRoute
-  '/contributions': typeof DashboardContributionsRoute
-  '/marketplace': typeof DashboardMarketplaceRoute
   '/profile': typeof DashboardProfileRoute
+  '/announcements/tambah': typeof DashboardAnnouncementsTambahRoute
+  '/complaints/warga': typeof DashboardComplaintsWargaRoute
+  '/contributions/kelola': typeof DashboardContributionsKelolaRoute
+  '/contributions/pengeluaran': typeof DashboardContributionsPengeluaranRoute
+  '/marketplace/validasi': typeof DashboardMarketplaceValidasiRoute
+  '/residents/pengurus': typeof DashboardResidentsPengurusRoute
+  '/residents/warga': typeof DashboardResidentsWargaRoute
+  '/announcements/': typeof DashboardAnnouncementsIndexRoute
+  '/complaints/': typeof DashboardComplaintsIndexRoute
+  '/contributions/': typeof DashboardContributionsIndexRoute
+  '/marketplace/': typeof DashboardMarketplaceIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
-  '/announcements': typeof DashboardAnnouncementsRoute
-  '/complaints': typeof DashboardComplaintsRoute
-  '/contributions': typeof DashboardContributionsRoute
-  '/marketplace': typeof DashboardMarketplaceRoute
   '/profile': typeof DashboardProfileRoute
   '/': typeof DashboardIndexRoute
+  '/announcements/tambah': typeof DashboardAnnouncementsTambahRoute
+  '/complaints/warga': typeof DashboardComplaintsWargaRoute
+  '/contributions/kelola': typeof DashboardContributionsKelolaRoute
+  '/contributions/pengeluaran': typeof DashboardContributionsPengeluaranRoute
+  '/marketplace/validasi': typeof DashboardMarketplaceValidasiRoute
+  '/residents/pengurus': typeof DashboardResidentsPengurusRoute
+  '/residents/warga': typeof DashboardResidentsWargaRoute
+  '/announcements': typeof DashboardAnnouncementsIndexRoute
+  '/complaints': typeof DashboardComplaintsIndexRoute
+  '/contributions': typeof DashboardContributionsIndexRoute
+  '/marketplace': typeof DashboardMarketplaceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
-  '/_dashboard/announcements': typeof DashboardAnnouncementsRoute
-  '/_dashboard/complaints': typeof DashboardComplaintsRoute
-  '/_dashboard/contributions': typeof DashboardContributionsRoute
-  '/_dashboard/marketplace': typeof DashboardMarketplaceRoute
   '/_dashboard/profile': typeof DashboardProfileRoute
   '/_dashboard/': typeof DashboardIndexRoute
+  '/_dashboard/announcements/tambah': typeof DashboardAnnouncementsTambahRoute
+  '/_dashboard/complaints/warga': typeof DashboardComplaintsWargaRoute
+  '/_dashboard/contributions/kelola': typeof DashboardContributionsKelolaRoute
+  '/_dashboard/contributions/pengeluaran': typeof DashboardContributionsPengeluaranRoute
+  '/_dashboard/marketplace/validasi': typeof DashboardMarketplaceValidasiRoute
+  '/_dashboard/residents/pengurus': typeof DashboardResidentsPengurusRoute
+  '/_dashboard/residents/warga': typeof DashboardResidentsWargaRoute
+  '/_dashboard/announcements/': typeof DashboardAnnouncementsIndexRoute
+  '/_dashboard/complaints/': typeof DashboardComplaintsIndexRoute
+  '/_dashboard/contributions/': typeof DashboardContributionsIndexRoute
+  '/_dashboard/marketplace/': typeof DashboardMarketplaceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/login'
-    | '/announcements'
-    | '/complaints'
-    | '/contributions'
-    | '/marketplace'
     | '/profile'
+    | '/announcements/tambah'
+    | '/complaints/warga'
+    | '/contributions/kelola'
+    | '/contributions/pengeluaran'
+    | '/marketplace/validasi'
+    | '/residents/pengurus'
+    | '/residents/warga'
+    | '/announcements/'
+    | '/complaints/'
+    | '/contributions/'
+    | '/marketplace/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/profile'
+    | '/'
+    | '/announcements/tambah'
+    | '/complaints/warga'
+    | '/contributions/kelola'
+    | '/contributions/pengeluaran'
+    | '/marketplace/validasi'
+    | '/residents/pengurus'
+    | '/residents/warga'
     | '/announcements'
     | '/complaints'
     | '/contributions'
     | '/marketplace'
-    | '/profile'
-    | '/'
   id:
     | '__root__'
     | '/_dashboard'
     | '/login'
-    | '/_dashboard/announcements'
-    | '/_dashboard/complaints'
-    | '/_dashboard/contributions'
-    | '/_dashboard/marketplace'
     | '/_dashboard/profile'
     | '/_dashboard/'
+    | '/_dashboard/announcements/tambah'
+    | '/_dashboard/complaints/warga'
+    | '/_dashboard/contributions/kelola'
+    | '/_dashboard/contributions/pengeluaran'
+    | '/_dashboard/marketplace/validasi'
+    | '/_dashboard/residents/pengurus'
+    | '/_dashboard/residents/warga'
+    | '/_dashboard/announcements/'
+    | '/_dashboard/complaints/'
+    | '/_dashboard/contributions/'
+    | '/_dashboard/marketplace/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -153,53 +247,117 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardProfileRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/_dashboard/marketplace': {
-      id: '/_dashboard/marketplace'
+    '/_dashboard/marketplace/': {
+      id: '/_dashboard/marketplace/'
       path: '/marketplace'
-      fullPath: '/marketplace'
-      preLoaderRoute: typeof DashboardMarketplaceRouteImport
+      fullPath: '/marketplace/'
+      preLoaderRoute: typeof DashboardMarketplaceIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/_dashboard/contributions': {
-      id: '/_dashboard/contributions'
+    '/_dashboard/contributions/': {
+      id: '/_dashboard/contributions/'
       path: '/contributions'
-      fullPath: '/contributions'
-      preLoaderRoute: typeof DashboardContributionsRouteImport
+      fullPath: '/contributions/'
+      preLoaderRoute: typeof DashboardContributionsIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/_dashboard/complaints': {
-      id: '/_dashboard/complaints'
+    '/_dashboard/complaints/': {
+      id: '/_dashboard/complaints/'
       path: '/complaints'
-      fullPath: '/complaints'
-      preLoaderRoute: typeof DashboardComplaintsRouteImport
+      fullPath: '/complaints/'
+      preLoaderRoute: typeof DashboardComplaintsIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/_dashboard/announcements': {
-      id: '/_dashboard/announcements'
+    '/_dashboard/announcements/': {
+      id: '/_dashboard/announcements/'
       path: '/announcements'
-      fullPath: '/announcements'
-      preLoaderRoute: typeof DashboardAnnouncementsRouteImport
+      fullPath: '/announcements/'
+      preLoaderRoute: typeof DashboardAnnouncementsIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/residents/warga': {
+      id: '/_dashboard/residents/warga'
+      path: '/residents/warga'
+      fullPath: '/residents/warga'
+      preLoaderRoute: typeof DashboardResidentsWargaRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/residents/pengurus': {
+      id: '/_dashboard/residents/pengurus'
+      path: '/residents/pengurus'
+      fullPath: '/residents/pengurus'
+      preLoaderRoute: typeof DashboardResidentsPengurusRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/marketplace/validasi': {
+      id: '/_dashboard/marketplace/validasi'
+      path: '/marketplace/validasi'
+      fullPath: '/marketplace/validasi'
+      preLoaderRoute: typeof DashboardMarketplaceValidasiRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/contributions/pengeluaran': {
+      id: '/_dashboard/contributions/pengeluaran'
+      path: '/contributions/pengeluaran'
+      fullPath: '/contributions/pengeluaran'
+      preLoaderRoute: typeof DashboardContributionsPengeluaranRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/contributions/kelola': {
+      id: '/_dashboard/contributions/kelola'
+      path: '/contributions/kelola'
+      fullPath: '/contributions/kelola'
+      preLoaderRoute: typeof DashboardContributionsKelolaRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/complaints/warga': {
+      id: '/_dashboard/complaints/warga'
+      path: '/complaints/warga'
+      fullPath: '/complaints/warga'
+      preLoaderRoute: typeof DashboardComplaintsWargaRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/_dashboard/announcements/tambah': {
+      id: '/_dashboard/announcements/tambah'
+      path: '/announcements/tambah'
+      fullPath: '/announcements/tambah'
+      preLoaderRoute: typeof DashboardAnnouncementsTambahRouteImport
       parentRoute: typeof DashboardRoute
     }
   }
 }
 
 interface DashboardRouteChildren {
-  DashboardAnnouncementsRoute: typeof DashboardAnnouncementsRoute
-  DashboardComplaintsRoute: typeof DashboardComplaintsRoute
-  DashboardContributionsRoute: typeof DashboardContributionsRoute
-  DashboardMarketplaceRoute: typeof DashboardMarketplaceRoute
   DashboardProfileRoute: typeof DashboardProfileRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardAnnouncementsTambahRoute: typeof DashboardAnnouncementsTambahRoute
+  DashboardComplaintsWargaRoute: typeof DashboardComplaintsWargaRoute
+  DashboardContributionsKelolaRoute: typeof DashboardContributionsKelolaRoute
+  DashboardContributionsPengeluaranRoute: typeof DashboardContributionsPengeluaranRoute
+  DashboardMarketplaceValidasiRoute: typeof DashboardMarketplaceValidasiRoute
+  DashboardResidentsPengurusRoute: typeof DashboardResidentsPengurusRoute
+  DashboardResidentsWargaRoute: typeof DashboardResidentsWargaRoute
+  DashboardAnnouncementsIndexRoute: typeof DashboardAnnouncementsIndexRoute
+  DashboardComplaintsIndexRoute: typeof DashboardComplaintsIndexRoute
+  DashboardContributionsIndexRoute: typeof DashboardContributionsIndexRoute
+  DashboardMarketplaceIndexRoute: typeof DashboardMarketplaceIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
-  DashboardAnnouncementsRoute: DashboardAnnouncementsRoute,
-  DashboardComplaintsRoute: DashboardComplaintsRoute,
-  DashboardContributionsRoute: DashboardContributionsRoute,
-  DashboardMarketplaceRoute: DashboardMarketplaceRoute,
   DashboardProfileRoute: DashboardProfileRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardAnnouncementsTambahRoute: DashboardAnnouncementsTambahRoute,
+  DashboardComplaintsWargaRoute: DashboardComplaintsWargaRoute,
+  DashboardContributionsKelolaRoute: DashboardContributionsKelolaRoute,
+  DashboardContributionsPengeluaranRoute:
+    DashboardContributionsPengeluaranRoute,
+  DashboardMarketplaceValidasiRoute: DashboardMarketplaceValidasiRoute,
+  DashboardResidentsPengurusRoute: DashboardResidentsPengurusRoute,
+  DashboardResidentsWargaRoute: DashboardResidentsWargaRoute,
+  DashboardAnnouncementsIndexRoute: DashboardAnnouncementsIndexRoute,
+  DashboardComplaintsIndexRoute: DashboardComplaintsIndexRoute,
+  DashboardContributionsIndexRoute: DashboardContributionsIndexRoute,
+  DashboardMarketplaceIndexRoute: DashboardMarketplaceIndexRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(

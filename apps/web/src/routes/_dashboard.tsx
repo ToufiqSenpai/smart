@@ -1,11 +1,11 @@
 import {
   createFileRoute,
   Outlet,
-  redirect,
   Link,
   useNavigate,
+  useLocation,
 } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   LayoutGrid,
   Megaphone,
@@ -15,6 +15,8 @@ import {
   LogOut,
   Menu,
   X,
+  Users,
+  ChevronDown,
 } from 'lucide-react'
 import smartLogo from '../assets/smart-logo.svg'
 
@@ -30,20 +32,63 @@ export const Route = createFileRoute('/_dashboard')({
 
 function DashboardLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  const isResidentsActive = location.pathname.startsWith('/residents')
+  const [isResidentsOpen, setIsResidentsOpen] = useState(isResidentsActive)
+
+  const isAnnouncementsActive = location.pathname.startsWith('/announcements')
+  const [isAnnouncementsOpen, setIsAnnouncementsOpen] = useState(
+    isAnnouncementsActive,
+  )
+
+  const isComplaintsActive = location.pathname.startsWith('/complaints')
+  const [isComplaintsOpen, setIsComplaintsOpen] = useState(isComplaintsActive)
+
+  const isMarketplaceActive = location.pathname.startsWith('/marketplace')
+  const [isMarketplaceOpen, setIsMarketplaceOpen] =
+    useState(isMarketplaceActive)
+
+  const isContributionsActive = location.pathname.startsWith('/contributions')
+  const [isContributionsOpen, setIsContributionsOpen] = useState(
+    isContributionsActive,
+  )
+
+  useEffect(() => {
+    if (isResidentsActive) {
+      setIsResidentsOpen(true)
+    }
+  }, [isResidentsActive])
+
+  useEffect(() => {
+    if (isAnnouncementsActive) {
+      setIsAnnouncementsOpen(true)
+    }
+  }, [isAnnouncementsActive])
+
+  useEffect(() => {
+    if (isComplaintsActive) {
+      setIsComplaintsOpen(true)
+    }
+  }, [isComplaintsActive])
+
+  useEffect(() => {
+    if (isMarketplaceActive) {
+      setIsMarketplaceOpen(true)
+    }
+  }, [isMarketplaceActive])
+
+  useEffect(() => {
+    if (isContributionsActive) {
+      setIsContributionsOpen(true)
+    }
+  }, [isContributionsActive])
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken')
     navigate({ to: '/login' })
   }
-
-  const navItems = [
-    { to: '/', label: 'Dashboard', icon: LayoutGrid },
-    { to: '/announcements', label: 'Announcement', icon: Megaphone },
-    { to: '/complaints', label: 'Complaints', icon: AlertTriangle },
-    { to: '/marketplace', label: 'Marketplace', icon: Store },
-    { to: '/contributions', label: 'Contributions', icon: Coins },
-  ] as const
 
   // Get current date formatted in Indonesian
   const getFormattedDate = () => {
@@ -91,34 +136,356 @@ function DashboardLayout() {
 
         {/* Sidebar Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              activeOptions={item.to === '/' ? { exact: true } : undefined}
-              onClick={() => setIsSidebarOpen(false)}
-              activeProps={{
-                className:
-                  'bg-[#edf4ff] text-[#0047cc] border-l-4 border-[#0047cc] font-semibold',
-              }}
-              inactiveProps={{
-                className:
-                  'border-l-4 border-transparent text-slate-600 hover:bg-slate-50/70 hover:text-slate-900',
-              }}
-              className="flex items-center gap-3 px-4 py-3 rounded-r-xl transition-all text-sm font-medium"
+          {/* 1. Dashboard */}
+          <Link
+            to="/"
+            activeOptions={{ exact: true }}
+            onClick={() => setIsSidebarOpen(false)}
+            activeProps={{
+              className:
+                'bg-[#edf4ff] text-[#0047cc] border-l-4 border-[#0047cc] font-semibold',
+            }}
+            inactiveProps={{
+              className:
+                'border-l-4 border-transparent text-slate-600 hover:bg-slate-50/70 hover:text-slate-900',
+            }}
+            className="flex items-center gap-3 px-4 py-3 rounded-r-xl transition-all text-sm font-medium"
+          >
+            {({ isActive }) => (
+              <>
+                <LayoutGrid
+                  className={`w-5 h-5 transition-colors ${
+                    isActive ? 'text-[#0047cc]' : 'text-slate-400'
+                  }`}
+                />
+                <span>Dashboard</span>
+              </>
+            )}
+          </Link>
+
+          {/* 2. Collapsible Announcements Dropdown */}
+          <div>
+            <button
+              onClick={() => setIsAnnouncementsOpen(!isAnnouncementsOpen)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-r-xl transition-all text-sm font-medium border-l-4 cursor-pointer select-none ${
+                isAnnouncementsActive
+                  ? 'bg-[#edf4ff] text-[#0047cc] border-[#0047cc] font-semibold'
+                  : 'border-transparent text-slate-600 hover:bg-slate-50/70 hover:text-slate-900'
+              }`}
             >
-              {({ isActive }) => (
-                <>
-                  <item.icon
-                    className={`w-5 h-5 transition-colors ${
-                      isActive ? 'text-[#0047cc]' : 'text-slate-400'
-                    }`}
-                  />
-                  <span>{item.label}</span>
-                </>
-              )}
-            </Link>
-          ))}
+              <div className="flex items-center gap-3">
+                <Megaphone
+                  className={`w-5 h-5 transition-colors ${
+                    isAnnouncementsActive ? 'text-[#0047cc]' : 'text-slate-400'
+                  }`}
+                />
+                <span>Announcement</span>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                  isAnnouncementsOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isAnnouncementsOpen && (
+              <div className="pl-9 pr-2 py-1.5 space-y-1 animate-[fadeIn_0.2s_ease-out]">
+                <Link
+                  to="/announcements"
+                  activeOptions={{ exact: true }}
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Daftar Pengumuman</span>
+                </Link>
+                <Link
+                  to="/announcements/tambah"
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Tambah Pengumuman</span>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Collapsible Complaints Dropdown */}
+          <div>
+            <button
+              onClick={() => setIsComplaintsOpen(!isComplaintsOpen)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-r-xl transition-all text-sm font-medium border-l-4 cursor-pointer select-none ${
+                isComplaintsActive
+                  ? 'bg-[#edf4ff] text-[#0047cc] border-[#0047cc] font-semibold'
+                  : 'border-transparent text-slate-600 hover:bg-slate-50/70 hover:text-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <AlertTriangle
+                  className={`w-5 h-5 transition-colors ${
+                    isComplaintsActive ? 'text-[#0047cc]' : 'text-slate-400'
+                  }`}
+                />
+                <span>Complaints</span>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                  isComplaintsOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isComplaintsOpen && (
+              <div className="pl-9 pr-2 py-1.5 space-y-1 animate-[fadeIn_0.2s_ease-out]">
+                <Link
+                  to="/complaints"
+                  activeOptions={{ exact: true }}
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Kirim Keluhan</span>
+                </Link>
+                <Link
+                  to="/complaints/warga"
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Keluhan Warga</span>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* 4. Collapsible Residents Dropdown */}
+          <div>
+            <button
+              onClick={() => setIsResidentsOpen(!isResidentsOpen)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-r-xl transition-all text-sm font-medium border-l-4 cursor-pointer select-none ${
+                isResidentsActive
+                  ? 'bg-[#edf4ff] text-[#0047cc] border-[#0047cc] font-semibold'
+                  : 'border-transparent text-slate-600 hover:bg-slate-50/70 hover:text-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Users
+                  className={`w-5 h-5 transition-colors ${
+                    isResidentsActive ? 'text-[#0047cc]' : 'text-slate-400'
+                  }`}
+                />
+                <span>Residents</span>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                  isResidentsOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isResidentsOpen && (
+              <div className="pl-9 pr-2 py-1.5 space-y-1 animate-[fadeIn_0.2s_ease-out]">
+                <Link
+                  to="/residents/warga"
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Data Warga</span>
+                </Link>
+                <Link
+                  to="/residents/pengurus"
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Pengurus RT</span>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* 5. Collapsible Marketplace Dropdown */}
+          <div>
+            <button
+              onClick={() => setIsMarketplaceOpen(!isMarketplaceOpen)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-r-xl transition-all text-sm font-medium border-l-4 cursor-pointer select-none ${
+                isMarketplaceActive
+                  ? 'bg-[#edf4ff] text-[#0047cc] border-[#0047cc] font-semibold'
+                  : 'border-transparent text-slate-600 hover:bg-slate-50/70 hover:text-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Store
+                  className={`w-5 h-5 transition-colors ${
+                    isMarketplaceActive ? 'text-[#0047cc]' : 'text-slate-400'
+                  }`}
+                />
+                <span>Marketplace</span>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                  isMarketplaceOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isMarketplaceOpen && (
+              <div className="pl-9 pr-2 py-1.5 space-y-1 animate-[fadeIn_0.2s_ease-out]">
+                <Link
+                  to="/marketplace"
+                  activeOptions={{ exact: true }}
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Daftar UMKM</span>
+                </Link>
+                <Link
+                  to="/marketplace/validasi"
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Validasi UMKM</span>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* 6. Collapsible Contributions Dropdown */}
+          <div>
+            <button
+              onClick={() => setIsContributionsOpen(!isContributionsOpen)}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-r-xl transition-all text-sm font-medium border-l-4 cursor-pointer select-none ${
+                isContributionsActive
+                  ? 'bg-[#edf4ff] text-[#0047cc] border-[#0047cc] font-semibold'
+                  : 'border-transparent text-slate-600 hover:bg-slate-50/70 hover:text-slate-900'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Coins
+                  className={`w-5 h-5 transition-colors ${
+                    isContributionsActive ? 'text-[#0047cc]' : 'text-slate-400'
+                  }`}
+                />
+                <span>Contributions</span>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                  isContributionsOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {isContributionsOpen && (
+              <div className="pl-9 pr-2 py-1.5 space-y-1 animate-[fadeIn_0.2s_ease-out]">
+                <Link
+                  to="/contributions"
+                  activeOptions={{ exact: true }}
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Iuran Saya</span>
+                </Link>
+                <Link
+                  to="/contributions/kelola"
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Kelola Iuran</span>
+                </Link>
+                <Link
+                  to="/contributions/pengeluaran"
+                  onClick={() => setIsSidebarOpen(false)}
+                  activeProps={{
+                    className:
+                      'text-[#0047cc] font-bold bg-[#edf4ff]/50 rounded-lg',
+                  }}
+                  inactiveProps={{
+                    className:
+                      'text-slate-500 hover:text-slate-800 hover:bg-slate-50/40 rounded-lg',
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-semibold transition-all"
+                >
+                  <span>Pengeluaran</span>
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Sidebar Profile & Logout Footer */}

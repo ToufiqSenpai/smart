@@ -17,7 +17,7 @@ import {
   Trash2,
 } from 'lucide-react'
 
-export const Route = createFileRoute('/_dashboard/complaints')({
+export const Route = createFileRoute('/_dashboard/complaints/')({
   component: ComplaintsPage,
 })
 
@@ -101,7 +101,7 @@ const getCategoryStyles = (category: string, status?: string) => {
     case 'Sanitation':
       if (status === 'RESOLVED') {
         return {
-          icon: TrashIconPlaceholder, // We can use dynamic check or direct Icon
+          icon: TrashIconPlaceholder,
           bg: 'bg-slate-50 border-slate-100 text-slate-500',
         }
       }
@@ -124,7 +124,21 @@ const getCategoryStyles = (category: string, status?: string) => {
 const TrashIconPlaceholder = Trash2
 
 function ComplaintsPage() {
-  const [complaints, setComplaints] = useState<Complaint[]>(INITIAL_COMPLAINTS)
+  const [complaints, setComplaints] = useState<Complaint[]>(() => {
+    const saved = localStorage.getItem('mock_complaints')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      const combined = [...parsed]
+      INITIAL_COMPLAINTS.forEach((def) => {
+        if (!combined.some((c) => c.id === def.id)) {
+          combined.push(def)
+        }
+      })
+      return combined
+    }
+    return INITIAL_COMPLAINTS
+  })
+
   const [category, setCategory] = useState<
     'Infrastructure' | 'Sanitation' | 'Security' | 'Public Facility'
   >('Infrastructure')
@@ -197,13 +211,12 @@ function ComplaintsPage() {
               : 'PUB'
       const ticketNumber = `${ticketPrefix}-${Math.floor(1000 + Math.random() * 9000)}`
 
-      // Derive title from description
       const trimmedDesc = description.trim()
       const title =
         trimmedDesc.length > 35 ? `${trimmedDesc.slice(0, 35)}...` : trimmedDesc
 
       const newComplaint: Complaint = {
-        id: (complaints.length + 1).toString(),
+        id: Date.now().toString(),
         ticketNumber,
         title,
         category,
@@ -218,14 +231,16 @@ function ComplaintsPage() {
           hour: '2-digit',
           minute: '2-digit',
         }),
-        statusProgress: 15, // initial progress matching the pending state flow
+        statusProgress: 15,
         photoUrl: photoPreview,
         photoName: photoFile?.name || null,
         officerName: null,
         adminResponse: null,
       }
 
-      setComplaints([newComplaint, ...complaints])
+      const updated = [newComplaint, ...complaints]
+      setComplaints(updated)
+      localStorage.setItem('mock_complaints', JSON.stringify(updated))
 
       // Reset form
       setCategory('Infrastructure')
@@ -235,7 +250,6 @@ function ComplaintsPage() {
       setPhotoPreview(null)
       setIsSubmitting(false)
 
-      // Trigger Toast
       setToastMessage('Laporan keluhan Anda berhasil dikirim!')
       setTimeout(() => {
         setToastMessage(null)
@@ -249,12 +263,12 @@ function ComplaintsPage() {
     <div className="max-w-6xl mx-auto p-1 animate-[fadeIn_0.3s_ease-out] relative">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-emerald-600 text-white font-semibold text-xs px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-[slideIn_0.2s_ease-out]">
+        <div className="fixed top-6 right-6 z-50 bg-[#0047cc] text-white font-semibold text-xs px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-[slideIn_0.2s_ease-out]">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{toastMessage}</span>
           <button
             onClick={() => setToastMessage(null)}
-            className="p-1 hover:bg-emerald-700 rounded-lg transition-colors ml-2 cursor-pointer"
+            className="p-1 hover:bg-[#003bb3] rounded-lg transition-colors ml-2 cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -283,7 +297,6 @@ function ComplaintsPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Category & Priority Select Row */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
@@ -323,7 +336,6 @@ function ComplaintsPage() {
                 </div>
               </div>
 
-              {/* Complaint Description */}
               <div>
                 <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
                   Deskripsi Keluhan
@@ -336,7 +348,6 @@ function ComplaintsPage() {
                 />
               </div>
 
-              {/* Supporting Photo Upload Area */}
               <div>
                 <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
                   Foto Pendukung
@@ -397,7 +408,6 @@ function ComplaintsPage() {
                 </div>
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
@@ -418,10 +428,9 @@ function ComplaintsPage() {
 
         {/* Right Column: Riwayat Keluhan */}
         <div className="lg:col-span-7 space-y-4">
-          {/* Section Header */}
           <div className="flex items-center justify-between pb-1">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-[#edf4ff] text-[#0047cc] flex items-center justify-center shrink-0">
                 <History className="w-4.5 h-4.5" />
               </div>
               <h2 className="text-base font-bold text-slate-800">
@@ -433,7 +442,6 @@ function ComplaintsPage() {
             </span>
           </div>
 
-          {/* Cards List */}
           <div className="space-y-4">
             {complaints.map((c) => {
               const isPending = c.status === 'PENDING'
@@ -448,16 +456,13 @@ function ComplaintsPage() {
                   key={c.id}
                   className="bg-white rounded-3xl p-6 border border-slate-100/80 shadow-[0_4px_25px_rgba(0,0,0,0.015)] hover:shadow-[0_8px_30px_rgba(0,71,204,0.02)] transition-all duration-300 flex flex-col gap-4 relative animate-[fadeIn_0.3s_ease-out]"
                 >
-                  {/* Card Header Row */}
                   <div className="flex gap-4">
-                    {/* Category Icon */}
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border shadow-sm ${styles.bg}`}
                     >
                       <IconComponent className="w-5 h-5" />
                     </div>
 
-                    {/* Title and Details */}
                     <div className="min-w-0 flex-1">
                       <h3 className="text-slate-900 font-bold text-sm leading-snug">
                         {c.title}
@@ -467,9 +472,7 @@ function ComplaintsPage() {
                       </p>
                     </div>
 
-                    {/* Right Badges */}
                     <div className="flex flex-col items-end gap-1.5 shrink-0 select-none">
-                      {/* Priority Badge */}
                       {c.priority === 'High' && (
                         <span className="bg-rose-100 text-rose-700 border border-rose-200/50 font-bold px-2 py-0.5 rounded text-[9px] tracking-wide uppercase">
                           High Priority
@@ -486,7 +489,6 @@ function ComplaintsPage() {
                         </span>
                       )}
 
-                      {/* Status Badge */}
                       {isPending && (
                         <span className="bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded text-[9px] tracking-wide uppercase">
                           Pending
@@ -505,12 +507,10 @@ function ComplaintsPage() {
                     </div>
                   </div>
 
-                  {/* Card Description */}
                   <p className="text-slate-500 text-xs leading-relaxed">
                     {c.description}
                   </p>
 
-                  {/* Attachment Photo Thumbnail */}
                   {c.photoUrl && (
                     <div className="mt-0.5">
                       <img
@@ -521,7 +521,6 @@ function ComplaintsPage() {
                     </div>
                   )}
 
-                  {/* Admin Tanggapan Box */}
                   {c.adminResponse && isInProgress && (
                     <div className="bg-blue-50/50 border border-blue-100/50 rounded-2xl p-4 flex gap-3 mt-0.5">
                       <MessageSquare className="text-blue-500 shrink-0 w-4 h-4 mt-0.5" />
@@ -536,7 +535,6 @@ function ComplaintsPage() {
                     </div>
                   )}
 
-                  {/* Progress Bar (Visible for Pending and In Progress) */}
                   {!isResolved && (
                     <div className="mt-0.5">
                       <div className="flex justify-between items-center text-[10px] font-bold">
@@ -554,7 +552,6 @@ function ComplaintsPage() {
                     </div>
                   )}
 
-                  {/* Officer Footer (Pending & In Progress) or Resolved Footer */}
                   {!isResolved ? (
                     <div className="flex items-center gap-2 mt-1 pt-3.5 border-t border-slate-100/60">
                       {c.officerName ? (
@@ -581,9 +578,9 @@ function ComplaintsPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="bg-emerald-50/50 border border-emerald-100/30 rounded-2xl p-3 flex items-center gap-2 mt-0.5 text-emerald-800 text-xs font-medium animate-[fadeIn_0.2s_ease-out]">
+                    <div className="bg-emerald-50/50 border border-emerald-100/30 rounded-2xl p-3 flex items-center gap-2 mt-0.5 text-emerald-800 text-xs font-medium">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>Selesai pada {c.timeAgo}</span>
+                      <span>Selesai pada {c.date}</span>
                     </div>
                   )}
                 </div>

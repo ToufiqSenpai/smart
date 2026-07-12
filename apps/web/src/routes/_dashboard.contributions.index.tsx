@@ -1,8 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   Wallet,
-  Calendar,
   ChevronLeft,
   ChevronRight,
   Info,
@@ -13,14 +12,13 @@ import {
   X,
   Eye,
   ListFilter,
-  ChevronDown,
   Copy,
   Check,
   Loader2,
   Coins,
 } from 'lucide-react'
 
-export const Route = createFileRoute('/_dashboard/contributions')({
+export const Route = createFileRoute('/_dashboard/contributions/')({
   component: ContributionsPage,
 })
 
@@ -95,14 +93,51 @@ const INITIAL_TRANSACTIONS: Transaction[] = [
 ]
 
 function ContributionsPage() {
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(INITIAL_TRANSACTIONS)
-  const [billingPeriod, setBillingPeriod] = useState('Juli 2024')
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    const saved = localStorage.getItem('mock_transactions')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      const combined = [...parsed]
+      INITIAL_TRANSACTIONS.forEach((def) => {
+        if (!combined.some((c) => c.id === def.id)) {
+          combined.push(def)
+        }
+      })
+      return combined
+    }
+    return INITIAL_TRANSACTIONS
+  })
+
+  const [billingPeriod] = useState('Juli 2024')
+
+  // Calculate status from localStorage to sync with validation
   const [billingStatus, setBillingStatus] = useState<
     'BELUM_BAYAR' | 'PENDING' | 'LUNAS'
-  >('BELUM_BAYAR')
-  const [totalPaid, setTotalPaid] = useState(1050000)
-  const [annualProgress, setAnnualProgress] = useState(58)
+  >(() => {
+    // If any transaction for "Juli 2024" is in "PROSES VERIFIKASI", status is PENDING.
+    // If any transaction for "Juli 2024" is in "LUNAS", status is LUNAS.
+    const juliTx = transactions.find((t) => t.month === 'Juli 2024')
+    if (juliTx) {
+      return juliTx.status === 'LUNAS' ? 'LUNAS' : 'PENDING'
+    }
+    return 'BELUM_BAYAR'
+  })
+
+  const [totalPaid, setTotalPaid] = useState(() => {
+    // Calculate total verified paid
+    const verifiedTxs = transactions.filter((t) => t.status === 'LUNAS')
+    return verifiedTxs.length * 150000
+  })
+
+  const [annualProgress, setAnnualProgress] = useState(() => {
+    const verifiedTxs = transactions.filter((t) => t.status === 'LUNAS')
+    const target = 1800000 // Annual target: 12 months * 150000
+    const progress = Math.min(
+      Math.round((verifiedTxs.length * 150000 * 100) / target),
+      100,
+    )
+    return progress
+  })
 
   // Modals state
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
@@ -136,6 +171,24 @@ function ContributionsPage() {
     startIndex,
     startIndex + itemsPerPage,
   )
+
+  useEffect(() => {
+    // Recalculate status and stats when transactions list updates
+    const juliTx = transactions.find((t) => t.month === 'Juli 2024')
+    if (juliTx) {
+      setBillingStatus(juliTx.status === 'LUNAS' ? 'LUNAS' : 'PENDING')
+    } else {
+      setBillingStatus('BELUM_BAYAR')
+    }
+
+    const verifiedTxs = transactions.filter((t) => t.status === 'LUNAS')
+    setTotalPaid(verifiedTxs.length * 150000)
+
+    const target = 1800000
+    setAnnualProgress(
+      Math.min(Math.round((verifiedTxs.length * 150000 * 100) / target), 100),
+    )
+  }, [transactions])
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
@@ -201,7 +254,7 @@ function ContributionsPage() {
       })
 
       const newTx: Transaction = {
-        id: (transactions.length + 1).toString(),
+        id: Date.now().toString(),
         month: 'Juli 2024',
         payDate: formattedDate,
         amount: 'Rp 150.000',
@@ -211,10 +264,28 @@ function ContributionsPage() {
         photoName: photoFile.name,
       }
 
-      setTransactions([newTx, ...transactions])
-      setBillingStatus('PENDING')
-      setTotalPaid((prev) => prev + 150000)
-      setAnnualProgress(66) // Increase annual progress (1200000 / 1800000 approx)
+      const updated = [newTx, ...transactions]
+      setTransactions(updated)
+      localStorage.setItem('mock_transactions', JSON.stringify(updated))
+
+      // Also append to the board's pending verification list for integration
+      const boardPendingSaved = localStorage.getItem('board_iuran_pending')
+      const boardPending = boardPendingSaved
+        ? JSON.parse(boardPendingSaved)
+        : []
+      const newBoardPending = {
+        id: newTx.id,
+        citizenName: 'Budi Santoso',
+        blok: 'Blok C-12',
+        iuranName: 'Keamanan & Kebersihan',
+        amount: 'Rp 150.000',
+        imageUrl: photoPreview,
+        date: formattedDate,
+      }
+      localStorage.setItem(
+        'board_iuran_pending',
+        JSON.stringify([newBoardPending, ...boardPending]),
+      )
 
       // Reset form
       setPhotoFile(null)
@@ -222,7 +293,7 @@ function ContributionsPage() {
       setNotes('')
       setIsPaymentModalOpen(false)
       setIsSubmitting(false)
-      setCurrentPage(1) // Move back to page 1 to see the new entry
+      setCurrentPage(1)
 
       // Toast Success
       setToastMessage(
@@ -245,7 +316,6 @@ function ContributionsPage() {
     if (currentPage > 1) setCurrentPage((prev) => prev - 1)
   }
 
-  // Format currency
   const formatIDR = (num: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -292,7 +362,7 @@ function ContributionsPage() {
         <button
           onClick={() => setIsPaymentModalOpen(true)}
           disabled={billingStatus !== 'BELUM_BAYAR'}
-          className="bg-[#0047cc] hover:bg-[#003bb3] active:bg-[#003399] disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none text-white font-bold rounded-xl px-5 py-3.5 text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0047cc]/15 transition-all self-start sm:self-center"
+          className="bg-[#0047cc] hover:bg-[#003bb3] active:bg-[#003399] disabled:bg-slate-105 disabled:text-slate-400 disabled:shadow-none text-white font-bold rounded-xl px-5 py-3.5 text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0047cc]/15 transition-all self-start sm:self-center"
         >
           <Wallet className="w-4 h-4" />
           <span>
@@ -310,7 +380,6 @@ function ContributionsPage() {
         {/* Card 1: Bill details */}
         <div className="bg-white rounded-3xl p-6 border border-slate-100/80 shadow-[0_4px_25px_rgba(0,0,0,0.015)] flex flex-col justify-between min-h-[190px]">
           <div className="flex justify-between items-start">
-            {/* Status Badge */}
             {billingStatus === 'BELUM_BAYAR' ? (
               <span className="bg-rose-50 border border-rose-100 text-rose-600 font-bold px-2.5 py-1 rounded-lg text-[9px] tracking-wide uppercase inline-flex items-center gap-1.5 select-none">
                 <AlertTriangle className="w-3 h-3" />
@@ -328,7 +397,6 @@ function ContributionsPage() {
               </span>
             )}
 
-            {/* Total Billing */}
             <div className="text-right">
               <span className="text-[10px] font-bold text-slate-400 tracking-wider block uppercase">
                 Total Tagihan
@@ -345,7 +413,6 @@ function ContributionsPage() {
             </h3>
           </div>
 
-          {/* Info Notice Banner */}
           <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex gap-3 mt-4 text-xs text-slate-600 items-start">
             <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
             <span>
@@ -401,17 +468,15 @@ function ContributionsPage() {
 
       {/* Payment History Section */}
       <div className="bg-white rounded-3xl border border-slate-100/80 shadow-[0_4px_25px_rgba(0,0,0,0.015)] overflow-hidden flex flex-col">
-        {/* Table Header */}
         <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/20">
           <h3 className="text-sm font-bold text-slate-800">
             Riwayat Pembayaran
           </h3>
-          <button className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors border border-slate-100/60 bg-white shadow-sm cursor-pointer">
+          <button className="p-2 text-slate-400 hover:text-slate-650 rounded-lg hover:bg-slate-50 transition-colors border border-slate-100/60 bg-white shadow-sm cursor-pointer">
             <ListFilter className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Responsive Table */}
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -474,7 +539,6 @@ function ContributionsPage() {
           </table>
         </div>
 
-        {/* Table Pagination */}
         <div className="px-6 py-4 flex justify-between items-center border-t border-slate-100 bg-slate-50/10 text-xs">
           <span className="text-slate-400 font-semibold">
             Menampilkan {startIndex + 1} -{' '}
@@ -504,7 +568,6 @@ function ContributionsPage() {
       {isPaymentModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-6 relative animate-[scaleIn_0.2s_ease-out] overflow-hidden max-h-[90vh] flex flex-col">
-            {/* Modal Header */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 shrink-0">
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <Wallet className="w-4.5 h-4.5 text-[#0047cc]" />
@@ -518,9 +581,7 @@ function ContributionsPage() {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="flex-1 overflow-y-auto py-4 space-y-5 pr-1 -mr-1">
-              {/* Payment Instructions panel */}
               <div className="bg-blue-50/50 border border-blue-100/50 rounded-2xl p-4 space-y-3">
                 <span className="text-[10px] font-bold text-blue-900 block uppercase tracking-wider">
                   Instruksi Pembayaran
@@ -531,7 +592,6 @@ function ContributionsPage() {
                   satu rekening pengurus RT berikut:
                 </p>
 
-                {/* Account Details */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-slate-100/80 shadow-sm text-xs">
                     <div>
@@ -583,7 +643,6 @@ function ContributionsPage() {
                 </div>
               </div>
 
-              {/* Upload Form */}
               <form onSubmit={handlePaymentSubmit} className="space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
@@ -646,7 +705,7 @@ function ContributionsPage() {
                         <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-[#edf4ff] group-hover:text-[#0047cc] transition-colors shrink-0">
                           <UploadCloud className="w-5 h-5" />
                         </div>
-                        <span className="text-xs font-semibold text-slate-600">
+                        <span className="text-xs font-semibold text-slate-650">
                           Tarik file ke sini atau klik untuk memilih file
                         </span>
                       </>
@@ -699,20 +758,18 @@ function ContributionsPage() {
       {isDetailsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-sm w-full p-6 relative animate-[scaleIn_0.2s_ease-out]">
-            {/* Header */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-100">
               <h2 className="text-base font-bold text-slate-800">
                 Rincian Tagihan Iuran
               </h2>
               <button
                 onClick={() => setIsDetailsModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-650 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Details Body */}
             <div className="py-4 space-y-3.5">
               <div className="flex justify-between text-xs font-semibold text-slate-500">
                 <span>Periode Tagihan</span>
@@ -756,7 +813,6 @@ function ContributionsPage() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setIsDetailsModalOpen(false)}
@@ -773,7 +829,6 @@ function ContributionsPage() {
       {isReceiptModalOpen && selectedTransaction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-sm w-full p-6 relative animate-[scaleIn_0.2s_ease-out]">
-            {/* Header */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-100">
               <h2 className="text-base font-bold text-slate-800">
                 Bukti Pembayaran
@@ -783,13 +838,12 @@ function ContributionsPage() {
                   setIsReceiptModalOpen(false)
                   setSelectedTransaction(null)
                 }}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-650 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Receipt Details */}
             <div className="py-4 space-y-4">
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col gap-2.5">
                 <div className="flex justify-between text-xs text-slate-500 font-semibold">
@@ -835,7 +889,6 @@ function ContributionsPage() {
                 )}
               </div>
 
-              {/* Receipt File Preview */}
               <div>
                 <span className="text-xs font-semibold text-slate-500 mb-2 block">
                   Lampiran File Bukti
@@ -850,7 +903,7 @@ function ContributionsPage() {
                   </div>
                 ) : (
                   <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-6 text-center text-slate-400 flex flex-col items-center gap-2">
-                    <FileText className="w-8 h-8 text-slate-300" />
+                    <FileText className="w-8 h-8 text-slate-350" />
                     <span className="text-xs font-semibold">
                       Resi Transfer Digital
                     </span>
@@ -862,7 +915,6 @@ function ContributionsPage() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => {

@@ -13,7 +13,7 @@ import {
   BarChart3,
 } from 'lucide-react'
 
-export const Route = createFileRoute('/_dashboard/announcements')({
+export const Route = createFileRoute('/_dashboard/announcements/')({
   component: AnnouncementsPage,
 })
 
@@ -57,45 +57,60 @@ const getCategoryStyles = (category: string) => {
   }
 }
 
+const DEFAULT_ANNOUNCEMENTS = [
+  {
+    id: '1',
+    category: 'Keamanan',
+    title: 'Rilis Jadwal Ronda Malam Periode November 2023',
+    date: '18 Okt 2023',
+    time: '09:15',
+    body: 'Bapak/Ibu warga RT 05, jadwal ronda terbaru telah disusun. Mohon kesediaannya untuk mengecek tanggal jaga masing-masing di pos ronda atau melalui lampiran dokumen digital ini demi menjaga keamanan lingkungan bersama. Ronda malam dimulai pukul 22:00 WIB hingga 04:00 WIB setiap harinya.',
+    read: false,
+  },
+  {
+    id: '2',
+    category: 'Kegiatan',
+    title: 'Kerja Bakti Bersama Pembersihan Saluran Air',
+    date: '15 Okt 2023',
+    time: '08:00',
+    body: 'Diberitahukan kepada seluruh warga RT 05 untuk berpartisipasi dalam kegiatan kerja bakti pembersihan saluran air (selokan) untuk mengantisipasi musim hujan. Mohon membawa peralatan kerja masing-masing seperti cangkul, sapu lidi, dan karung sampah. Kumpul di depan balai RT pukul 08:00 WIB.',
+    read: false,
+  },
+  {
+    id: '3',
+    category: 'Iuran',
+    title: 'Penyesuaian Tarif Iuran Sampah Bulanan',
+    date: '10 Okt 2023',
+    time: '14:30',
+    body: 'Mulai periode November 2023, iuran kebersihan/sampah bulanan disesuaikan menjadi Rp 35.000,- berdasarkan hasil musyawarah warga RT 05 bulan lalu. Penyesuaian ini dikarenakan peningkatan biaya operasional pengangkutan sampah dari TPA daerah.',
+    read: false,
+  },
+  {
+    id: '4',
+    category: 'Pembangunan',
+    title: 'Renovasi Paving Block Gang Utama RT 05',
+    date: '05 Okt 2023',
+    time: '10:00',
+    body: 'Proses renovasi dan pengaspalan ulang paving block di gang utama RT 05 akan dimulai minggu depan. Mohon untuk memarkirkan kendaraan di area sementara yang telah disediakan selama proses pengerjaan berlangsung demi kelancaran dan keselamatan pekerja.',
+    read: true,
+  },
+]
+
 function AnnouncementsPage() {
-  const [announcements, setAnnouncements] = useState([
-    {
-      id: '1',
-      category: 'Keamanan',
-      title: 'Rilis Jadwal Ronda Malam Periode November 2023',
-      date: '18 Okt 2023',
-      time: '09:15',
-      body: 'Bapak/Ibu warga RT 05, jadwal ronda terbaru telah disusun. Mohon kesediaannya untuk mengecek tanggal jaga masing-masing di pos ronda atau melalui lampiran dokumen digital ini demi menjaga keamanan lingkungan bersama. Ronda malam dimulai pukul 22:00 WIB hingga 04:00 WIB setiap harinya.',
-      read: false,
-    },
-    {
-      id: '2',
-      category: 'Kegiatan',
-      title: 'Kerja Bakti Bersama Pembersihan Saluran Air',
-      date: '15 Okt 2023',
-      time: '08:00',
-      body: 'Diberitahukan kepada seluruh warga RT 05 untuk berpartisipasi dalam kegiatan kerja bakti pembersihan saluran air (selokan) untuk mengantisipasi musim hujan. Mohon membawa peralatan kerja masing-masing seperti cangkul, sapu lidi, dan karung sampah. Kumpul di depan balai RT pukul 08:00 WIB.',
-      read: false,
-    },
-    {
-      id: '3',
-      category: 'Iuran',
-      title: 'Penyesuaian Tarif Iuran Sampah Bulanan',
-      date: '10 Okt 2023',
-      time: '14:30',
-      body: 'Mulai periode November 2023, iuran kebersihan/sampah bulanan disesuaikan menjadi Rp 35.000,- berdasarkan hasil musyawarah warga RT 05 bulan lalu. Penyesuaian ini dikarenakan peningkatan biaya operasional pengangkutan sampah dari TPA daerah.',
-      read: false,
-    },
-    {
-      id: '4',
-      category: 'Pembangunan',
-      title: 'Renovasi Paving Block Gang Utama RT 05',
-      date: '05 Okt 2023',
-      time: '10:00',
-      body: 'Proses renovasi dan pengaspalan ulang paving block di gang utama RT 05 akan dimulai minggu depan. Mohon untuk memarkirkan kendaraan di area sementara yang telah disediakan selama proses pengerjaan berlangsung demi kelancaran dan keselamatan pekerja.',
-      read: true,
-    },
-  ])
+  const [announcements, setAnnouncements] = useState<any[]>(() => {
+    const saved = localStorage.getItem('mock_announcements')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      const combined = [...parsed]
+      DEFAULT_ANNOUNCEMENTS.forEach((def) => {
+        if (!combined.some((c) => c.id === def.id)) {
+          combined.push(def)
+        }
+      })
+      return combined
+    }
+    return DEFAULT_ANNOUNCEMENTS
+  })
 
   const [selectedCategory, setSelectedCategory] = useState('Semua')
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null)

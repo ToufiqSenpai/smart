@@ -17,7 +17,7 @@ import {
   LayoutGrid,
 } from 'lucide-react'
 
-export const Route = createFileRoute('/_dashboard/marketplace')({
+export const Route = createFileRoute('/_dashboard/marketplace/')({
   component: MarketplacePage,
 })
 
@@ -91,7 +91,21 @@ const getCategoryIcon = (category: string) => {
 }
 
 function MarketplacePage() {
-  const [umkmList, setUmkmList] = useState<Umkm[]>(INITIAL_UMKM)
+  const [umkmList, setUmkmList] = useState<Umkm[]>(() => {
+    const saved = localStorage.getItem('mock_umkm')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      const combined = [...parsed]
+      INITIAL_UMKM.forEach((def) => {
+        if (!combined.some((c) => c.id === def.id)) {
+          combined.push(def)
+        }
+      })
+      return combined
+    }
+    return INITIAL_UMKM
+  })
+
   const [selectedFilter, setSelectedFilter] = useState<string>('Semua')
 
   // Registration modal state
@@ -196,9 +210,9 @@ function MarketplacePage() {
       }
 
       const newUmkm: Umkm = {
-        id: (umkmList.length + 1).toString(),
+        id: Date.now().toString(),
         name: name.trim(),
-        rating: 5.0, // New registered stores get 5.0 initially!
+        rating: 5.0,
         category,
         location: location.trim(),
         phone: phone.trim(),
@@ -206,7 +220,9 @@ function MarketplacePage() {
         imageName: photoFile?.name || null,
       }
 
-      setUmkmList([newUmkm, ...umkmList])
+      const updated = [newUmkm, ...umkmList]
+      setUmkmList(updated)
+      localStorage.setItem('mock_umkm', JSON.stringify(updated))
 
       // Reset form
       setName('')
@@ -217,7 +233,7 @@ function MarketplacePage() {
       setPhotoPreview(null)
       setIsRegisterModalOpen(false)
       setIsSubmitting(false)
-      setSelectedFilter('Semua') // Move to all to see the newly registered item
+      setSelectedFilter('Semua')
 
       // Toast Success
       setToastMessage(
@@ -320,21 +336,18 @@ function MarketplacePage() {
                   key={item.id}
                   className="bg-white rounded-3xl p-5 border border-slate-100/80 shadow-[0_4px_25px_rgba(0,0,0,0.015)] hover:shadow-[0_8px_30px_rgba(0,71,204,0.02)] transition-all duration-300 flex flex-col md:flex-row gap-5 relative overflow-hidden"
                 >
-                  {/* Image wrapper */}
                   <div className="w-full md:w-56 h-36 md:h-36 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner">
                     <img
                       src={item.imageUrl}
                       alt={item.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        // Fallback image source if Unsplash fails
                         e.currentTarget.src =
                           'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop&q=60'
                       }}
                     />
                   </div>
 
-                  {/* Content details */}
                   <div className="flex-1 flex flex-col justify-between py-1">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -349,20 +362,17 @@ function MarketplacePage() {
                         </div>
                       </div>
 
-                      {/* Category Badge */}
                       <span className="bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-lg text-[9px] font-bold tracking-wide uppercase inline-flex items-center gap-1.5 select-none">
                         <CatIcon className="w-3 h-3" />
                         {item.category}
                       </span>
 
-                      {/* Location details */}
                       <div className="flex items-center gap-1 text-slate-400 text-xs font-semibold select-none">
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
                         <span>{item.location}</span>
                       </div>
                     </div>
 
-                    {/* Action buttons */}
                     <div className="flex items-center gap-3 mt-4 md:mt-0 select-none">
                       <button
                         onClick={() => handleHubungiClick(item)}
@@ -402,7 +412,6 @@ function MarketplacePage() {
       {isRegisterModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-6 relative animate-[scaleIn_0.2s_ease-out] overflow-hidden max-h-[90vh] flex flex-col">
-            {/* Header */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 shrink-0">
               <h2 className="text-base font-bold text-slate-800">
                 Daftar UMKM Baru
@@ -415,7 +424,6 @@ function MarketplacePage() {
               </button>
             </div>
 
-            {/* Scrollable Form Body */}
             <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 -mr-1">
               <form onSubmit={handleRegisterSubmit} className="space-y-4">
                 <div>
@@ -488,7 +496,6 @@ function MarketplacePage() {
                   </div>
                 </div>
 
-                {/* Pill Selectors for Types */}
                 <div>
                   <label className="text-xs font-semibold text-slate-500 mb-2.5 block">
                     Jenis UMKM Anda
@@ -582,7 +589,6 @@ function MarketplacePage() {
       {isContactModalOpen && selectedUmkm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-xs w-full p-6 relative animate-[scaleIn_0.2s_ease-out]">
-            {/* Header */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-100">
               <h2 className="text-base font-bold text-slate-800">
                 Kontak UMKM
@@ -592,13 +598,12 @@ function MarketplacePage() {
                   setIsContactModalOpen(false)
                   setSelectedUmkm(null)
                 }}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-650 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Details */}
             <div className="py-4 space-y-3.5">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 block uppercase">
@@ -626,7 +631,6 @@ function MarketplacePage() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="pt-2">
               <button
                 onClick={() => {
@@ -646,7 +650,6 @@ function MarketplacePage() {
       {isWhatsappModalOpen && selectedUmkm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
           <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-sm w-full p-6 relative animate-[scaleIn_0.2s_ease-out]">
-            {/* Header */}
             <div className="flex justify-between items-center pb-4 border-b border-slate-100">
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <MessageSquare className="w-4.5 h-4.5 text-[#0047cc]" />
@@ -663,7 +666,6 @@ function MarketplacePage() {
               </button>
             </div>
 
-            {/* Details */}
             <div className="py-4 space-y-4">
               <p className="text-xs text-slate-500 leading-normal">
                 Mengirim pesan WhatsApp ke <strong>{selectedUmkm.name}</strong>{' '}
@@ -675,7 +677,6 @@ function MarketplacePage() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="pt-2 flex gap-3">
               <button
                 onClick={() => {
