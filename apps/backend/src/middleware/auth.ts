@@ -58,7 +58,7 @@ export async function authenticate(
     if (masyarakat.pengurusRt) {
       idPengurus = masyarakat.pengurusRt.idPengurus;
       role =
-        masyarakat.pengurusRt.jabatan === "Ketua RT"
+        masyarakat.pengurusRt.jabatan === "CHAIRPERSON"
           ? "CHAIRPERSON"
           : "OFFICER";
     }

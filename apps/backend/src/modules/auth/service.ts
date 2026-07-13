@@ -49,9 +49,8 @@ export async function login(payload: LoginBody) {
   });
 
   let role: "RESIDENT" | "OFFICER" | "CHAIRPERSON" = "RESIDENT";
-
   if (user.pengurusRt) {
-    role = user.pengurusRt.jabatan === "Ketua RT" ? "CHAIRPERSON" : "OFFICER";
+    role = user.pengurusRt.jabatan === "CHAIRPERSON" ? "CHAIRPERSON" : "OFFICER";
   }
 
   return {
