@@ -2,7 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../db/prisma.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "smart-rt-secret-key";
+if (!process.env.JWT_SECRET) {
+  throw new Error("FATAL ERROR: JWT_SECRET is not defined in environment variables.");
+}
+const JWT_SECRET = process.env.JWT_SECRET as string; 
 
 export interface AuthUser {
   id: string;
