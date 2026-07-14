@@ -1,8 +1,14 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import * as authRepository from "./repository.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "smart-rt-secret-key";
+
+if (!process.env.JWT_SECRET) {
+  throw new Error("FATAL ERROR: JWT_SECRET is not defined in environment variables.");
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
 
 interface LoginBody {
   email: string;
@@ -29,12 +35,7 @@ export async function login(payload: LoginBody) {
     };
   }
 
-  let passwordMatch;
-  if (user.password.startsWith("$2b$") || user.password.startsWith("$2a$")) {
-    passwordMatch = await bcrypt.compare(password, user.password);
-  } else {
-    passwordMatch = password === user.password;
-  }
+  const passwordMatch = await bcrypt.compare(password, user.password);
 
   if (!passwordMatch) {
     throw {
@@ -44,14 +45,19 @@ export async function login(payload: LoginBody) {
     };
   }
 
-  const token = jwt.sign({ id: user.idMasyarakat }, JWT_SECRET, {
-    expiresIn: "24h",
-  });
+  const tokenPayload = { 
+    id: user.idMasyarakat 
+  };
+
+  const signOptions: SignOptions = {
+    expiresIn: JWT_EXPIRES_IN as unknown as SignOptions["expiresIn"],
+  };
+
+  const token = jwt.sign(tokenPayload, JWT_SECRET, signOptions);
 
   let role: "RESIDENT" | "OFFICER" | "CHAIRPERSON" = "RESIDENT";
-
   if (user.pengurusRt) {
-    role = user.pengurusRt.jabatan === "Ketua RT" ? "CHAIRPERSON" : "OFFICER";
+    role = user.pengurusRt.jabatan === "CHAIRPERSON" ? "CHAIRPERSON" : "OFFICER";
   }
 
   return {
