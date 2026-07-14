@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as DashboardIndexRouteImport } from './routes/_dashboard.index'
@@ -25,6 +26,11 @@ import { Route as DashboardContributionsKelolaRouteImport } from './routes/_dash
 import { Route as DashboardComplaintsWargaRouteImport } from './routes/_dashboard.complaints.warga'
 import { Route as DashboardAnnouncementsTambahRouteImport } from './routes/_dashboard.announcements.tambah'
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -113,6 +119,7 @@ const DashboardAnnouncementsTambahRoute =
 export interface FileRoutesByFullPath {
   '/': typeof DashboardIndexRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/profile': typeof DashboardProfileRoute
   '/announcements/tambah': typeof DashboardAnnouncementsTambahRoute
   '/complaints/warga': typeof DashboardComplaintsWargaRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/profile': typeof DashboardProfileRoute
   '/': typeof DashboardIndexRoute
   '/announcements/tambah': typeof DashboardAnnouncementsTambahRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/_dashboard/profile': typeof DashboardProfileRoute
   '/_dashboard/': typeof DashboardIndexRoute
   '/_dashboard/announcements/tambah': typeof DashboardAnnouncementsTambahRoute
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/register'
     | '/profile'
     | '/announcements/tambah'
     | '/complaints/warga'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
+    | '/register'
     | '/profile'
     | '/'
     | '/announcements/tambah'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_dashboard'
     | '/login'
+    | '/register'
     | '/_dashboard/profile'
     | '/_dashboard/'
     | '/_dashboard/announcements/tambah'
@@ -215,10 +227,18 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -367,6 +387,7 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
