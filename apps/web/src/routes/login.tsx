@@ -7,6 +7,20 @@ import { useLocalStorage } from 'usehooks-ts'
 import http from '../utils/http'
 import smartLogo from '../assets/smart-logo.svg'
 
+interface LoginUser {
+  id: string
+  nama: string
+  role: 'RESIDENT' | 'OFFICER' | 'CHAIRPERSON'
+}
+
+interface AuthLoginResponse {
+  message: string
+  data: {
+    accessToken: string
+    user: LoginUser
+  }
+}
+
 export const Route = createFileRoute('/login')({
   component: Login,
 })
@@ -18,9 +32,14 @@ function Login() {
 
   // login mutation using TanStack Query
   const loginMutation = useMutation({
+    // Don't retry auth failures (e.g. wrong password would otherwise fire 3x)
+    retry: false,
     mutationFn: async (payload: { email: string; password: string }) => {
       try {
-        const response = await http.post('/auth/login', payload)
+        const response = await http.post<AuthLoginResponse>(
+          '/auth/login',
+          payload,
+        )
         return response.data
       } catch (error: any) {
         const errMsg =
@@ -215,16 +234,6 @@ function Login() {
           />
         </form>
 
-        {/* Register prompt */}
-        <p className="text-center mt-6 text-xs text-slate-500">
-          Belum punya akun?{' '}
-          <a
-            href="#register"
-            className="text-[#0047cc] hover:underline font-semibold ml-0.5"
-          >
-            Daftar Sekarang
-          </a>
-        </p>
       </div>
     </div>
   )

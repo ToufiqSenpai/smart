@@ -1,6 +1,10 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ChevronDown, CheckCircle2, X, Loader2, Megaphone } from 'lucide-react'
+import { Loader2, Megaphone } from 'lucide-react'
+import { Toast } from '@/components/ui/Toast'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 
 export const Route = createFileRoute('/_dashboard/announcements/tambah')({
   component: TambahPengumumanPage,
@@ -73,18 +77,7 @@ function TambahPengumumanPage() {
   return (
     <div className="max-w-6xl mx-auto p-1 animate-[fadeIn_0.3s_ease-out] relative">
       {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-[#0047cc] text-white font-semibold text-xs px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-[slideIn_0.2s_ease-out]">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{toastMessage}</span>
-          <button
-            onClick={() => setToastMessage(null)}
-            className="p-1 hover:bg-[#003bb3] rounded-lg transition-colors ml-2 cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Main Layout Card Container */}
       <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100/80 shadow-[0_4px_25px_rgba(0,0,0,0.015)] space-y-6">
@@ -119,50 +112,35 @@ function TambahPengumumanPage() {
         {/* Input Form */}
         <form onSubmit={handleSubmit} className="space-y-5 pt-2">
           {/* Judul Pengumuman */}
-          <div>
-            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-              Judul Pengumuman
-            </label>
-            <input
-              type="text"
-              value={judul}
-              onChange={(e) => setJudul(e.target.value)}
-              placeholder="Contoh : Perlombaan menyambut 17 Agustus"
-              className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-            />
-          </div>
+          <Input
+            label="Judul Pengumuman"
+            value={judul}
+            onChange={(e) => setJudul(e.target.value)}
+            placeholder="Contoh : Perlombaan menyambut 17 Agustus"
+          />
 
           {/* Kategori Dropdown */}
-          <div>
-            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-              Kategori
-            </label>
-            <div className="relative max-w-xs">
-              <select
-                value={kategori}
-                onChange={(e) => setKategori(e.target.value)}
-                className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all appearance-none cursor-pointer pr-10 font-semibold"
-              >
-                <option value="Keamanan">Keamanan</option>
-                <option value="Kegiatan">Kegiatan</option>
-                <option value="Iuran">Iuran</option>
-                <option value="Pembangunan">Pembangunan</option>
-              </select>
-              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+          <div className="max-w-xs">
+            <Select
+              label="Kategori"
+              value={kategori}
+              onChange={(e) => setKategori(e.target.value)}
+              options={[
+                { value: 'Keamanan', label: 'Keamanan' },
+                { value: 'Kegiatan', label: 'Kegiatan' },
+                { value: 'Iuran', label: 'Iuran' },
+                { value: 'Pembangunan', label: 'Pembangunan' },
+              ]}
+            />
           </div>
 
           {/* Deskripsi Textarea */}
-          <div>
-            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-              Deskripsi
-            </label>
-            <textarea
-              value={deskripsi}
-              onChange={(e) => setDeskripsi(e.target.value)}
-              className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all resize-none h-44 leading-relaxed font-semibold"
-            />
-          </div>
+          <Textarea
+            label="Deskripsi"
+            value={deskripsi}
+            onChange={(e) => setDeskripsi(e.target.value)}
+            rows={6}
+          />
 
           {/* Submit Button */}
           <button

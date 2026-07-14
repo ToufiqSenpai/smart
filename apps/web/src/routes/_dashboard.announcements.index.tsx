@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Modal } from '@/components/ui/Modal'
 import {
   Shield,
   Calendar,
@@ -7,7 +10,6 @@ import {
   Wrench,
   Info,
   Clock,
-  X,
   MessageSquarePlus,
   Mail,
   BarChart3,
@@ -139,11 +141,7 @@ function AnnouncementsPage() {
   return (
     <div className="max-w-6xl mx-auto p-1 animate-[fadeIn_0.3s_ease-out]">
       {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
-          Pengumuman
-        </h1>
-      </div>
+      <PageHeader title="Pengumuman" />
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2 mb-8">
@@ -218,15 +216,11 @@ function AnnouncementsPage() {
               )
             })
           ) : (
-            <div className="bg-white border border-slate-100 rounded-2xl p-12 text-center shadow-sm">
-              <Info className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-slate-700 font-bold text-sm">
-                Tidak ada pengumuman
-              </h3>
-              <p className="text-slate-400 text-xs mt-1">
-                Belum ada pengumuman resmi di kategori {selectedCategory}.
-              </p>
-            </div>
+            <EmptyState
+              icon={<Info className="w-10 h-10" />}
+              title="Tidak ada pengumuman"
+              description={`Belum ada pengumuman resmi di kategori ${selectedCategory}.`}
+            />
           )}
         </div>
 
@@ -296,26 +290,25 @@ function AnnouncementsPage() {
       </div>
 
       {/* Immersive Slide-over Modal for Details */}
-      {selectedAnnouncement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-lg w-full p-6 relative animate-[scaleIn_0.2s_ease-out] overflow-hidden">
-            {/* Modal header with category and close */}
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-              <span
-                className={`px-2.5 py-0.5 text-[10px] font-bold rounded-md tracking-wider ${getCategoryStyles(selectedAnnouncement.category).bg}`}
-              >
-                {selectedAnnouncement.category.toUpperCase()}
-              </span>
-              <button
-                onClick={() => setSelectedAnnouncement(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal body */}
-            <div className="mt-4 space-y-3">
+      <Modal
+        isOpen={selectedAnnouncement !== null}
+        onClose={() => setSelectedAnnouncement(null)}
+        title={
+          selectedAnnouncement ? (
+            <span
+              className={`px-2.5 py-0.5 text-[10px] font-bold rounded-md tracking-wider inline-block ${getCategoryStyles(selectedAnnouncement.category).bg}`}
+            >
+              {selectedAnnouncement.category.toUpperCase()}
+            </span>
+          ) : (
+            ''
+          )
+        }
+        maxWidthClass="max-w-lg"
+      >
+        {selectedAnnouncement && (
+          <>
+            <div className="mt-2 space-y-3">
               <div className="text-slate-400 text-xs flex items-center gap-1.5 font-medium">
                 <Clock className="w-3.5 h-3.5" />
                 <span>
@@ -329,8 +322,6 @@ function AnnouncementsPage() {
                 {selectedAnnouncement.body}
               </p>
             </div>
-
-            {/* Modal footer */}
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setSelectedAnnouncement(null)}
@@ -339,9 +330,9 @@ function AnnouncementsPage() {
                 Tutup
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

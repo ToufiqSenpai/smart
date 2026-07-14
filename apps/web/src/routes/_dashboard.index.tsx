@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { PageHeader } from '@/components/ui/PageHeader'
 import {
   CreditCard,
   Heart,
@@ -132,9 +133,7 @@ function DashboardIndex() {
   return (
     <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
       {/* Page Title */}
-      <h1 className="text-xl font-bold text-[#0047cc] tracking-tight">
-        Dashboard
-      </h1>
+      <PageHeader title="Dashboard" />
 
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
