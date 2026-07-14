@@ -1,5 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useRef, useEffect } from 'react'
+import { Toast } from '@/components/ui/Toast'
+import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
 import {
   User,
   MapPin,
@@ -7,8 +10,6 @@ import {
   Mail,
   Map,
   Calendar,
-  X,
-  CheckCircle2,
   Pencil,
   Loader2,
 } from 'lucide-react'
@@ -136,18 +137,7 @@ function ProfilePage() {
   return (
     <div className="max-w-6xl mx-auto p-1 animate-[fadeIn_0.3s_ease-out] relative">
       {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-[#0047cc] text-white font-semibold text-xs px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-[slideIn_0.2s_ease-out]">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{toastMessage}</span>
-          <button
-            onClick={() => setToastMessage(null)}
-            className="p-1 hover:bg-[#003bb3] rounded-lg transition-colors ml-2 cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Hidden file input for avatar upload */}
       <input
@@ -220,52 +210,31 @@ function ProfilePage() {
             </h2>
 
             <form onSubmit={handleProfileSubmit} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                  Nama
-                </label>
-                <input
-                  type="text"
-                  value={inputName}
-                  onChange={(e) => setInputName(e.target.value)}
-                  className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-                />
-              </div>
+              <Input
+                label="Nama"
+                value={inputName}
+                onChange={(e) => setInputName(e.target.value)}
+              />
 
-              <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                  Alamat
-                </label>
-                <textarea
-                  value={inputAddress}
-                  onChange={(e) => setInputAddress(e.target.value)}
-                  className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all resize-none h-24 leading-relaxed font-semibold"
-                />
-              </div>
+              <Textarea
+                label="Alamat"
+                value={inputAddress}
+                onChange={(e) => setInputAddress(e.target.value)}
+                className="h-24"
+              />
 
-              <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                  Nomor Telepon
-                </label>
-                <input
-                  type="text"
-                  value={inputPhone}
-                  onChange={(e) => setInputPhone(e.target.value)}
-                  className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-                />
-              </div>
+              <Input
+                label="Nomor Telepon"
+                value={inputPhone}
+                onChange={(e) => setInputPhone(e.target.value)}
+              />
 
-              <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={inputEmail}
-                  onChange={(e) => setInputEmail(e.target.value)}
-                  className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-                />
-              </div>
+              <Input
+                label="Email"
+                type="email"
+                value={inputEmail}
+                onChange={(e) => setInputEmail(e.target.value)}
+              />
 
               <button
                 type="submit"

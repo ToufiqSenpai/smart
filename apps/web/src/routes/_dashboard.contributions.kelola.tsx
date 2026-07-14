@@ -1,13 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Toast } from '@/components/ui/Toast'
+import { Modal } from '@/components/ui/Modal'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import {
   Coins,
   CheckCircle2,
-  X,
   Plus,
   AlertTriangle,
   Clock,
-  ChevronDown,
   Info,
   Calendar,
   FileText,
@@ -334,25 +337,10 @@ function KelolaIuranPage() {
   return (
     <div className="max-w-6xl mx-auto p-1 animate-[fadeIn_0.3s_ease-out] relative">
       {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-[#0047cc] text-white font-semibold text-xs px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-[slideIn_0.2s_ease-out]">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{toastMessage}</span>
-          <button
-            onClick={() => setToastMessage(null)}
-            className="p-1 hover:bg-[#003bb3] rounded-lg transition-colors ml-2 cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Page Title */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-[#0047cc] tracking-tight">
-          Iuran Bulanan
-        </h1>
-      </div>
+      <PageHeader title="Iuran Bulanan" />
 
       {/* Top statistics panel */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 select-none">
@@ -443,82 +431,51 @@ function KelolaIuranPage() {
             </div>
 
             <form onSubmit={handleAddIuran} className="space-y-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                  Judul Iuran
-                </label>
-                <input
-                  type="text"
-                  value={judulIuran}
-                  onChange={(e) => setJudulIuran(e.target.value)}
-                  placeholder="Contoh: Iuran HUT RI Ke-81"
-                  className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
+              <Input
+                label="Judul Iuran"
+                value={judulIuran}
+                onChange={(e) => setJudulIuran(e.target.value)}
+                placeholder="Contoh: Iuran HUT RI Ke-81"
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <Select
+                  label="Kategori"
+                  value={kategori}
+                  onChange={(e) => setKategori(e.target.value)}
+                  options={[
+                    { value: 'Perayaan', label: 'Perayaan' },
+                    { value: 'Keamanan', label: 'Keamanan' },
+                    { value: 'Kebersihan', label: 'Kebersihan' },
+                    { value: 'Pembangunan', label: 'Pembangunan' },
+                  ]}
+                />
+
+                <Input
+                  label="Tagihan/KK"
+                  value={tagihanPerKK}
+                  onChange={(e) => setTagihanPerKK(e.target.value)}
+                  placeholder="Contoh: Rp 100.000"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Kategori
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={kategori}
-                      onChange={(e) => setKategori(e.target.value)}
-                      className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all appearance-none cursor-pointer pr-9 font-semibold"
-                    >
-                      <option value="Perayaan">Perayaan</option>
-                      <option value="Keamanan">Keamanan</option>
-                      <option value="Kebersihan">Kebersihan</option>
-                      <option value="Pembangunan">Pembangunan</option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
-                </div>
+                <Input
+                  type="date"
+                  label="Tenggat"
+                  value={tenggat}
+                  onChange={(e) => setTenggat(e.target.value)}
+                />
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Tagihan/KK
-                  </label>
-                  <input
-                    type="text"
-                    value={tagihanPerKK}
-                    onChange={(e) => setTagihanPerKK(e.target.value)}
-                    placeholder="Contoh: Rp 100.000"
-                    className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Tenggat
-                  </label>
-                  <input
-                    type="date"
-                    value={tenggat}
-                    onChange={(e) => setTenggat(e.target.value)}
-                    className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Kategori Iuran
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={kategoriIuran}
-                      onChange={(e) => setKategoriIuran(e.target.value)}
-                      className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all appearance-none cursor-pointer pr-9 font-semibold"
-                    >
-                      <option value="Wajib">Wajib</option>
-                      <option value="Insidental">Insidental</option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
-                </div>
+                <Select
+                  label="Kategori Iuran"
+                  value={kategoriIuran}
+                  onChange={(e) => setKategoriIuran(e.target.value)}
+                  options={[
+                    { value: 'Wajib', label: 'Wajib' },
+                    { value: 'Insidental', label: 'Insidental' },
+                  ]}
+                />
               </div>
 
               <button
@@ -873,23 +830,20 @@ function KelolaIuranPage() {
             </p>
 
             <div className="space-y-4">
-              <div className="relative">
-                <select
-                  value={deactivateId}
-                  onChange={(e) => setDeactivateId(e.target.value)}
-                  className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all appearance-none cursor-pointer pr-9 font-semibold"
-                >
-                  <option value="">Pilih iuran untuk Dinonaktifkan</option>
-                  {iuranList
+              <Select
+                label="Pilih Iuran"
+                value={deactivateId}
+                onChange={(e) => setDeactivateId(e.target.value)}
+                options={[
+                  { value: '', label: 'Pilih iuran untuk Dinonaktifkan' },
+                  ...iuranList
                     .filter((i) => i.status === 'AKTIF')
-                    .map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.title} ({item.amount})
-                      </option>
-                    ))}
-                </select>
-                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
+                    .map((item) => ({
+                      value: item.id,
+                      label: `${item.title} (${item.amount})`,
+                    })),
+                ]}
+              />
 
               <button
                 onClick={handleDeactivate}
@@ -903,24 +857,15 @@ function KelolaIuranPage() {
       </div>
 
       {/* Modal: View Receipt Detail Mockup */}
-      {receiptPreviewUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-sm w-full p-6 relative animate-[scaleIn_0.2s_ease-out]">
-            {/* Header */}
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-              <h2 className="text-base font-bold text-slate-800">
-                Resi Bukti Transfer
-              </h2>
-              <button
-                onClick={() => setReceiptPreviewUrl(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Content Preview */}
-            <div className="py-4 space-y-4">
+      <Modal
+        isOpen={receiptPreviewUrl !== null}
+        onClose={() => setReceiptPreviewUrl(null)}
+        title="Resi Bukti Transfer"
+        maxWidthClass="max-w-sm"
+      >
+        {receiptPreviewUrl && (
+          <>
+            <div className="space-y-4">
               {receiptPreviewUrl === 'fallback' ? (
                 <div className="bg-slate-50 border border-slate-150 rounded-2xl p-6 flex flex-col items-center justify-center gap-2.5 text-slate-500 text-center select-none shadow-inner">
                   <FileText className="w-10 h-10 text-slate-350" />
@@ -945,8 +890,7 @@ function KelolaIuranPage() {
               )}
             </div>
 
-            {/* Footer */}
-            <div className="pt-2 flex justify-end">
+            <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setReceiptPreviewUrl(null)}
                 className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl py-3 text-xs transition-all cursor-pointer text-center"
@@ -954,9 +898,9 @@ function KelolaIuranPage() {
                 Tutup
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

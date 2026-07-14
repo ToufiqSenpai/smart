@@ -1,5 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useRef } from 'react'
+import { useState } from 'react'
+import { Toast } from '@/components/ui/Toast'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Modal } from '@/components/ui/Modal'
+import { Input } from '@/components/ui/Input'
+import { FileUploader } from '@/components/ui/FileUploader'
 import {
   Utensils,
   User,
@@ -125,10 +131,7 @@ function MarketplacePage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
-
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Filters mapping
   const filters = [
@@ -143,42 +146,6 @@ function MarketplacePage() {
     if (selectedFilter === 'Semua') return true
     return item.category === selectedFilter
   })
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = () => {
-    setIsDragging(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const file = e.dataTransfer.files[0]
-    processFile(file)
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    processFile(file)
-  }
-
-  const processFile = (file?: File) => {
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Ukuran file maksimal adalah 5MB.')
-        return
-      }
-      setPhotoFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
-  }
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -256,25 +223,10 @@ function MarketplacePage() {
   return (
     <div className="max-w-6xl mx-auto p-1 animate-[fadeIn_0.3s_ease-out] relative">
       {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-[#0047cc] text-white font-semibold text-xs px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-[slideIn_0.2s_ease-out]">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{toastMessage}</span>
-          <button
-            onClick={() => setToastMessage(null)}
-            className="p-1 hover:bg-[#003bb3] rounded-lg transition-colors ml-2 cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-[#0047cc] tracking-tight">
-          Marketplace
-        </h1>
-      </div>
+      <PageHeader title="Marketplace" />
 
       {/* Action Header */}
       <div className="bg-white rounded-3xl p-6 border border-slate-100/80 shadow-[0_4px_25px_rgba(0,0,0,0.015)] mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -394,217 +346,138 @@ function MarketplacePage() {
               )
             })
           ) : (
-            <div className="bg-white border border-slate-100 rounded-3xl p-12 text-center shadow-sm">
-              <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-              <h3 className="text-slate-700 font-bold text-sm">
-                Belum ada UMKM terdaftar
-              </h3>
-              <p className="text-slate-400 text-xs mt-1">
-                Jadilah yang pertama mendaftarkan usaha kategori "
-                {selectedFilter}" di sini!
-              </p>
-            </div>
+            <EmptyState
+              icon={<ShoppingBag className="w-10 h-10" />}
+              title="Belum ada UMKM terdaftar"
+              description={`Jadilah yang pertama mendaftarkan usaha kategori "${selectedFilter}" di sini!`}
+            />
           )}
         </div>
       </div>
 
       {/* MODAL 1: Daftar UMKM (Registration Form) */}
-      {isRegisterModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-6 relative animate-[scaleIn_0.2s_ease-out] overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100 shrink-0">
-              <h2 className="text-base font-bold text-slate-800">
-                Daftar UMKM Baru
-              </h2>
-              <button
-                onClick={() => setIsRegisterModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Modal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        title="Daftar UMKM Baru"
+      >
+        <form onSubmit={handleRegisterSubmit} className="space-y-4">
+          <Input
+            label="Nama UMKM"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Contoh: Laundry Neng Yangyang"
+          />
 
-            <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 -mr-1">
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Nama UMKM
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Contoh: Laundry Neng Yangyang"
-                    className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-                  />
-                </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
+              Gambar (Image)
+            </label>
+            <FileUploader
+              previewUrl={photoPreview}
+              fileName={photoFile?.name || null}
+              onFileSelected={(file) => {
+                setPhotoFile(file)
+                const reader = new FileReader()
+                reader.onloadend = () => {
+                  setPhotoPreview(reader.result as string)
+                }
+                reader.readAsDataURL(file)
+              }}
+              onClear={() => {
+                setPhotoFile(null)
+                setPhotoPreview(null)
+              }}
+            />
+          </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Gambar (Image)
-                  </label>
-                  <div
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group ${
-                      isDragging
-                        ? 'border-[#0047cc] bg-blue-50/20'
-                        : 'border-slate-200/80 hover:border-[#0047cc]/40 bg-slate-50/40 hover:bg-slate-50/70'
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                    {photoPreview ? (
-                      <div className="relative w-full flex flex-col items-center gap-2 animate-[fadeIn_0.2s_ease-out]">
-                        <img
-                          src={photoPreview}
-                          alt="UMKM Preview"
-                          className="max-h-24 rounded-lg object-cover border border-slate-100"
-                        />
-                        <span className="text-[11px] font-semibold text-slate-500 truncate max-w-[200px]">
-                          {photoFile?.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setPhotoFile(null)
-                            setPhotoPreview(null)
-                          }}
-                          className="absolute -top-2 -right-2 bg-rose-500 hover:bg-rose-600 text-white rounded-full p-1 shadow-sm transition-colors cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-[#edf4ff] group-hover:text-[#0047cc] transition-colors shrink-0">
-                          <UploadCloud className="w-5 h-5" />
-                        </div>
-                        <span className="text-xs font-semibold text-slate-600">
-                          Tarik file ke sini atau klik untuk memilih file
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-2.5 block">
-                    Jenis UMKM Anda
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(
-                      [
-                        'Makanan & Minuman',
-                        'Jasa',
-                        'Sembako',
-                        'Elektronik',
-                      ] as const
-                    ).map((catName) => {
-                      const isActive = category === catName
-                      const CatPillIcon = getCategoryIcon(catName)
-                      return (
-                        <button
-                          type="button"
-                          key={catName}
-                          onClick={() => setCategory(catName)}
-                          className={`px-3 py-2.5 text-[11px] font-semibold border rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none ${
-                            isActive
-                              ? 'border-[#0047cc] bg-[#edf4ff] text-[#0047cc]'
-                              : 'border-slate-200/80 text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                          }`}
-                        >
-                          <CatPillIcon className="w-3.5 h-3.5 shrink-0" />
-                          <span className="truncate">{catName}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Lokasi
-                  </label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Contoh : Blok B7/67"
-                    className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Nomor Whatsapp
-                  </label>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Contoh : 086767676769"
-                    className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-                  />
-                </div>
-
-                <div className="pt-2 flex gap-3 shrink-0">
+          <div>
+            <label className="text-xs font-semibold text-slate-500 mb-2.5 block">
+              Jenis UMKM Anda
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  'Makanan & Minuman',
+                  'Jasa',
+                  'Sembako',
+                  'Elektronik',
+                ] as const
+              ).map((catName) => {
+                const isActive = category === catName
+                const CatPillIcon = getCategoryIcon(catName)
+                return (
                   <button
                     type="button"
-                    onClick={() => setIsRegisterModalOpen(false)}
-                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl py-3 text-xs transition-all cursor-pointer text-center"
+                    key={catName}
+                    onClick={() => setCategory(catName)}
+                    className={`px-3 py-2.5 text-[11px] font-semibold border rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none ${
+                      isActive
+                        ? 'border-[#0047cc] bg-[#edf4ff] text-[#0047cc]'
+                        : 'border-slate-200/80 text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                    }`}
                   >
-                    Batal
+                    <CatPillIcon className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{catName}</span>
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 bg-[#0047cc] hover:bg-[#003bb3] active:bg-[#003399] disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl py-3 text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0047cc]/10 transition-all"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Mendaftarkan...</span>
-                      </>
-                    ) : (
-                      <span>Kirim Konfirmasi</span>
-                    )}
-                  </button>
-                </div>
-              </form>
+                )
+              })}
             </div>
           </div>
-        </div>
-      )}
+
+          <Input
+            label="Lokasi"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="Contoh : Blok B7/67"
+          />
+
+          <Input
+            label="Nomor Whatsapp"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Contoh : 086767676769"
+          />
+
+          <div className="pt-2 flex gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsRegisterModalOpen(false)}
+              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl py-3 text-xs transition-all cursor-pointer text-center"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 bg-[#0047cc] hover:bg-[#003bb3] active:bg-[#003399] disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl py-3 text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0047cc]/10 transition-all"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Mendaftarkan...</span>
+                </>
+              ) : (
+                <span>Kirim Konfirmasi</span>
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* MODAL 2: Kontak Details */}
-      {isContactModalOpen && selectedUmkm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-xs w-full p-6 relative animate-[scaleIn_0.2s_ease-out]">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-              <h2 className="text-base font-bold text-slate-800">
-                Kontak UMKM
-              </h2>
-              <button
-                onClick={() => {
-                  setIsContactModalOpen(false)
-                  setSelectedUmkm(null)
-                }}
-                className="p-1.5 text-slate-400 hover:text-slate-650 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="py-4 space-y-3.5">
+      <Modal
+        isOpen={isContactModalOpen && selectedUmkm !== null}
+        onClose={() => {
+          setIsContactModalOpen(false)
+          setSelectedUmkm(null)
+        }}
+        title="Kontak UMKM"
+        maxWidthClass="max-w-xs"
+      >
+        {selectedUmkm && (
+          <>
+            <div className="space-y-3.5">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 block uppercase">
                   Nama Usaha
@@ -642,31 +515,28 @@ function MarketplacePage() {
                 Tutup
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
 
       {/* MODAL 3: Whatsapp Chat Mock */}
-      {isWhatsappModalOpen && selectedUmkm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-sm w-full p-6 relative animate-[scaleIn_0.2s_ease-out]">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <MessageSquare className="w-4.5 h-4.5 text-[#0047cc]" />
-                WhatsApp Chat
-              </h2>
-              <button
-                onClick={() => {
-                  setIsWhatsappModalOpen(false)
-                  setSelectedUmkm(null)
-                }}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="py-4 space-y-4">
+      <Modal
+        isOpen={isWhatsappModalOpen && selectedUmkm !== null}
+        onClose={() => {
+          setIsWhatsappModalOpen(false)
+          setSelectedUmkm(null)
+        }}
+        title={
+          <>
+            <MessageSquare className="w-4.5 h-4.5 text-[#0047cc]" />
+            WhatsApp Chat
+          </>
+        }
+        maxWidthClass="max-w-sm"
+      >
+        {selectedUmkm && (
+          <>
+            <div className="space-y-4">
               <p className="text-xs text-slate-500 leading-normal">
                 Mengirim pesan WhatsApp ke <strong>{selectedUmkm.name}</strong>{' '}
                 ({selectedUmkm.phone}):
@@ -700,9 +570,9 @@ function MarketplacePage() {
                 <span>Buka WhatsApp</span>
               </a>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

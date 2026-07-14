@@ -1,426 +1,304 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Toast } from '@/components/ui/Toast'
+import { Modal } from '@/components/ui/Modal'
 import {
   ChevronLeft,
   ChevronRight,
-  CheckCircle2,
-  X,
   PlusCircle,
   Loader2,
+  Search,
+  AlertCircle,
 } from 'lucide-react'
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import type {
+  SortingState,
+} from '@tanstack/react-table'
+import http from '@/utils/http'
 
 export const Route = createFileRoute('/_dashboard/residents/warga')({
   component: WargaPage,
 })
 
-interface Citizen {
+interface Resident {
   id: string
-  name: string
-  nationality: string
-  age: number
-  kkNumber: string
-  address: string
-  phone: string
-  job: string
-  role: 'KK' | 'Anggota'
-  billingStatus: 'Lunas' | 'Menunggak'
+  nik: string
+  nama: string
+  statusKeanggotaan: string
 }
 
-const INITIAL_CITIZENS: Citizen[] = [
-  {
-    id: '1',
-    name: 'Ahmad Subarjo',
-    nationality: 'WNI',
-    age: 42,
-    kkNumber: '3273112405820001',
-    address: 'Blok A / No. 12',
-    phone: '0812-3456-7890',
-    job: 'Wiraswasta',
-    role: 'KK',
-    billingStatus: 'Lunas',
+const residentsQueryOptions = {
+  queryKey: ['residents'] as const,
+  queryFn: async (): Promise<Resident[]> => {
+    const res = await http.get('/residents')
+    return (res.data?.data ?? []) as Resident[]
   },
-  {
-    id: '2',
-    name: 'Siti Dewi',
-    nationality: 'WNI',
-    age: 38,
-    kkNumber: '3273112405820005',
-    address: 'Blok B / No. 05',
-    phone: '0819-8765-4321',
-    job: 'IRT',
-    role: 'Anggota',
-    billingStatus: 'Menunggak',
-  },
-  {
-    id: '3',
-    name: 'Budi Pratama',
-    nationality: 'WNI',
-    age: 50,
-    kkNumber: '3273112405820003',
-    address: 'Blok A / No. 01',
-    phone: '0811-2233-4455',
-    job: 'Karyawan Swasta',
-    role: 'KK',
-    billingStatus: 'Lunas',
-  },
+}
+
+const AVATAR_COLORS = [
+  'bg-blue-100 text-blue-700 border-blue-200/50',
+  'bg-emerald-100 text-emerald-700 border-emerald-200/50',
+  'bg-amber-100 text-amber-700 border-amber-200/50',
+  'bg-indigo-100 text-indigo-700 border-indigo-200/50',
+  'bg-rose-100 text-rose-700 border-rose-200/50',
+]
+
+const getInitials = (fullName: string) =>
+  fullName
+    .split(' ')
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+
+const getAvatarBg = (id: string) =>
+  AVATAR_COLORS[parseInt(id) || 0 % AVATAR_COLORS.length]
+
+const columnHelper = createColumnHelper<Resident>()
+
+const columns = [
+  columnHelper.accessor('nama', {
+    header: 'Nama Lengkap',
+    cell: (info) => {
+      const resident = info.row.original
+      return (
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shrink-0 border shadow-inner select-none ${getAvatarBg(
+              resident.id,
+            )}`}
+          >
+            {getInitials(resident.nama)}
+          </div>
+          <span className="text-slate-800 font-bold text-xs block leading-tight">
+            {resident.nama}
+          </span>
+        </div>
+      )
+    },
+  }),
+  columnHelper.accessor('nik', {
+    header: 'NIK',
+    cell: (info) => (
+      <span className="text-xs text-slate-500 font-semibold">
+        {info.getValue()}
+      </span>
+    ),
+  }),
+  columnHelper.accessor('statusKeanggotaan', {
+    header: 'Status Keanggotaan',
+    cell: (info) => {
+      const aktif = info.getValue().toUpperCase() === 'AKTIF'
+      return aktif ? (
+        <span className="bg-[#0047cc] text-white font-bold px-2 py-0.5 rounded text-[9px] tracking-wide uppercase inline-block select-none">
+          Aktif
+        </span>
+      ) : (
+        <span className="bg-slate-100 text-slate-600 border border-slate-200/50 font-bold px-2 py-0.5 rounded text-[9px] tracking-wide uppercase inline-block select-none">
+          {info.getValue()}
+        </span>
+      )
+    },
+  }),
 ]
 
 function WargaPage() {
-  const [citizens, setCitizens] = useState<Citizen[]>(INITIAL_CITIZENS)
-
-  // Form states
-  const [name, setName] = useState('')
-  const [kkNumber, setKkNumber] = useState('')
-  const [address, setAddress] = useState('')
-  const [phone, setPhone] = useState('')
-  const [job, setJob] = useState('')
-
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
 
-  const handleAddWarga = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) {
-      alert('Nama wajib diisi.')
-      return
-    }
-    if (!kkNumber.trim()) {
-      alert('Nomor KK wajib diisi.')
-      return
-    }
-    if (!address.trim()) {
-      alert('Alamat wajib diisi.')
-      return
-    }
-    if (!phone.trim()) {
-      alert('Nomor telepon wajib diisi.')
-      return
-    }
-    if (!job.trim()) {
-      alert('Pekerjaan wajib diisi.')
-      return
-    }
+  const { data: residents = [], isPending, isError, error } = useQuery(
+    residentsQueryOptions,
+  )
 
-    setIsSubmitting(true)
+  const data = useMemo(() => residents, [residents])
 
-    // Simulate saving citizen
-    setTimeout(() => {
-      const newCitizen: Citizen = {
-        id: (citizens.length + 1).toString(),
-        name: name.trim(),
-        nationality: 'WNI',
-        age: Math.floor(18 + Math.random() * 50),
-        kkNumber: kkNumber.trim(),
-        address: address.trim(),
-        phone: phone.trim(),
-        job: job.trim(),
-        role:
-          citizens.filter((c) => c.kkNumber === kkNumber.trim()).length > 0
-            ? 'Anggota'
-            : 'KK',
-        billingStatus: 'Lunas',
-      }
+  const table = useReactTable({
+    data,
+    columns,
+    state: { sorting, globalFilter },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: 'includesString',
+    autoResetPageIndex: true,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: { pagination: { pageIndex: 0, pageSize: 8 } },
+  })
 
-      setCitizens([newCitizen, ...citizens])
-
-      // Reset form
-      setName('')
-      setKkNumber('')
-      setAddress('')
-      setPhone('')
-      setJob('')
-      setIsSubmitting(false)
-
-      // Toast Notification
-      setToastMessage(
-        `Warga "${newCitizen.name}" berhasil ditambahkan ke database!`,
-      )
-      setTimeout(() => setToastMessage(null), 4000)
-    }, 1200)
-  }
-
-  // Get initials for avatar icon
-  const getInitials = (fullName: string) => {
-    return fullName
-      .split(' ')
-      .slice(0, 2)
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-  }
-
-  // Avatar bg colors based on index/name
-  const getAvatarBg = (id: string) => {
-    const num = parseInt(id) || 0
-    const colors = [
-      'bg-blue-100 text-blue-700 border-blue-200/50',
-      'bg-emerald-100 text-emerald-700 border-emerald-200/50',
-      'bg-amber-100 text-amber-700 border-amber-200/50',
-      'bg-indigo-100 text-indigo-700 border-indigo-200/50',
-      'bg-rose-100 text-rose-700 border-rose-200/50',
-    ]
-    return colors[num % colors.length]
-  }
+  const { pageIndex, pageSize } = table.getState().pagination
+  const filteredRows = table.getFilteredRowModel().rows
+  const firstRow = filteredRows.length === 0 ? 0 : pageIndex * pageSize + 1
+  const lastRow = Math.min((pageIndex + 1) * pageSize, filteredRows.length)
+  const pageButtons = Array.from(
+    { length: table.getPageCount() },
+    (_, i) => i + 1,
+  ).slice(Math.max(0, pageIndex - 1), pageIndex + 2)
 
   return (
     <div className="max-w-6xl mx-auto p-1 animate-[fadeIn_0.3s_ease-out] relative space-y-8">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-[#0047cc] text-white font-semibold text-xs px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-[slideIn_0.2s_ease-out]">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{toastMessage}</span>
+      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+
+      <PageHeader
+        title="Data Warga"
+        actions={
           <button
-            onClick={() => setToastMessage(null)}
-            className="p-1 hover:bg-[#003bb3] rounded-lg transition-colors ml-2 cursor-pointer"
+            type="button"
+            onClick={() => setIsFormOpen(true)}
+            className="flex items-center gap-2 bg-[#0047cc] hover:bg-[#003bb3] text-white font-bold rounded-xl px-4 py-2.5 text-xs shadow-md shadow-[#0047cc]/15 transition-all cursor-pointer"
           >
-            <X className="w-3.5 h-3.5" />
+            <PlusCircle className="w-4 h-4" />
+            <span>Tambah Warga</span>
           </button>
+        }
+      />
+
+      <Modal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        title="Tambah Warga"
+        maxWidthClass="max-w-2xl"
+      >
+        <div className="text-xs text-slate-500 font-semibold py-8 text-center">
+          Pendaftaran warga baru dilakukan melalui halaman registrasi.
         </div>
-      )}
+      </Modal>
 
-      {/* Page Title */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-extrabold text-[#0047cc] tracking-tight">
-          Data Warga
-        </h1>
-      </div>
-
-      {/* Section 1: Tambah Warga Form */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-100/80 shadow-[0_4px_25px_rgba(0,0,0,0.015)]">
-        <div className="flex items-center gap-2.5 mb-6">
-          <div className="w-8 h-8 rounded-lg bg-[#edf4ff] text-[#0047cc] flex items-center justify-center shrink-0 border border-slate-50 shadow-sm">
-            <PlusCircle className="w-4.5 h-4.5" />
-          </div>
-          <h2 className="text-base font-bold text-slate-800">Tambah Warga</h2>
-        </div>
-
-        <form onSubmit={handleAddWarga} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                Nama
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Contoh : Steve Roger"
-                className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                No. KK
-              </label>
-              <input
-                type="text"
-                value={kkNumber}
-                onChange={(e) => setKkNumber(e.target.value)}
-                placeholder="Contoh : 3273082005820003"
-                className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                Alamat (Blok/No)
-              </label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Contoh : Blok B/ No. 7"
-                className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                Nomor Telepon
-              </label>
-              <input
-                type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Contoh : 086767676769"
-                className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                Pekerjaan
-              </label>
-              <input
-                type="text"
-                value={job}
-                onChange={(e) => setJob(e.target.value)}
-                placeholder="Contoh : Youtuber"
-                className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-[#0047cc] hover:bg-[#003bb3] active:bg-[#003399] disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl py-3 mt-4 transition-all shadow-md shadow-[#0047cc]/15 text-xs flex items-center justify-center gap-2 cursor-pointer"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Menambahkan...</span>
-              </>
-            ) : (
-              <span>Tambah Warga</span>
-            )}
-          </button>
-        </form>
-      </div>
-
-      {/* Section 2: Warga List Table */}
       <div className="bg-white rounded-3xl border border-slate-100/80 shadow-[0_4px_25px_rgba(0,0,0,0.015)] overflow-hidden flex flex-col">
-        {/* Table responsive view */}
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr>
-                <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider px-6 py-4 bg-slate-50/20 border-b border-slate-100">
-                  Nama Lengkap
-                </th>
-                <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider px-6 py-4 bg-slate-50/20 border-b border-slate-100">
-                  No. KK
-                </th>
-                <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider px-6 py-4 bg-slate-50/20 border-b border-slate-100">
-                  Alamat (Blok/No)
-                </th>
-                <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider px-6 py-4 bg-slate-50/20 border-b border-slate-100">
-                  Telepon
-                </th>
-                <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider px-6 py-4 bg-slate-50/20 border-b border-slate-100">
-                  Pekerjaan
-                </th>
-                <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider px-6 py-4 bg-slate-50/20 border-b border-slate-100">
-                  Status Peran
-                </th>
-                <th className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider px-6 py-4 bg-slate-50/20 border-b border-slate-100">
-                  Status Iuran
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {citizens.map((citizen) => (
-                <tr
-                  key={citizen.id}
-                  className="border-b border-slate-100/60 hover:bg-slate-50/10 transition-colors"
-                >
-                  {/* Name and avatar info */}
-                  <td className="px-6 py-4 flex items-center gap-3">
-                    <div
-                      className={`w-9 h-9 rounded-full font-bold text-xs flex items-center justify-center shrink-0 border shadow-inner select-none ${getAvatarBg(
-                        citizen.id,
-                      )}`}
-                    >
-                      {getInitials(citizen.name)}
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-slate-800 font-bold text-xs block leading-tight">
-                        {citizen.name}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">
-                        {citizen.nationality} • {citizen.age} Thn
-                      </span>
-                    </div>
-                  </td>
-
-                  {/* KK Number */}
-                  <td className="px-6 py-4 text-xs text-slate-500 font-semibold">
-                    {citizen.kkNumber}
-                  </td>
-
-                  {/* Address */}
-                  <td className="px-6 py-4 text-xs text-slate-600 font-medium">
-                    {citizen.address}
-                  </td>
-
-                  {/* Phone */}
-                  <td className="px-6 py-4 text-xs text-slate-500 font-semibold">
-                    {citizen.phone}
-                  </td>
-
-                  {/* Job */}
-                  <td className="px-6 py-4 text-xs text-slate-600 font-medium">
-                    {citizen.job}
-                  </td>
-
-                  {/* Role status badge */}
-                  <td className="px-6 py-4 text-xs">
-                    {citizen.role === 'KK' ? (
-                      <span className="bg-[#0047cc] text-white font-bold px-2 py-0.5 rounded text-[9px] tracking-wide uppercase inline-block select-none">
-                        KK
-                      </span>
-                    ) : (
-                      <span className="bg-slate-100 text-slate-600 border border-slate-200/50 font-bold px-2 py-0.5 rounded text-[9px] tracking-wide uppercase inline-block select-none">
-                        Anggota
-                      </span>
-                    )}
-                  </td>
-
-                  {/* Billing status badge */}
-                  <td className="px-6 py-4 text-xs">
-                    {citizen.billingStatus === 'Lunas' ? (
-                      <span className="text-emerald-600 font-bold text-xs flex items-center gap-1.5 select-none">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0" />
-                        Lunas
-                      </span>
-                    ) : (
-                      <span className="text-rose-600 font-bold text-xs flex items-center gap-1.5 select-none">
-                        <span className="w-1.5 h-1.5 bg-rose-500 rounded-full shrink-0" />
-                        Menunggak
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination Footer */}
-        <div className="px-6 py-4 flex justify-between items-center border-t border-slate-100 bg-slate-50/10 text-xs">
-          <span className="text-slate-400 font-semibold">
-            Menampilkan {citizens.length} dari 452 warga
-          </span>
-          <div className="flex items-center gap-1.5 select-none">
-            <button
-              className="p-1 border border-slate-200 text-slate-400 hover:text-slate-700 disabled:text-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-              disabled
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button className="w-7 h-7 bg-[#0047cc] text-white font-bold rounded-lg text-xs flex items-center justify-center cursor-pointer shadow-sm shadow-[#0047cc]/15">
-              1
-            </button>
-            <button className="w-7 h-7 border border-slate-200 text-slate-500 hover:text-slate-800 font-bold rounded-lg text-xs flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
-              2
-            </button>
-            <button className="w-7 h-7 border border-slate-200 text-slate-500 hover:text-slate-800 font-bold rounded-lg text-xs flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
-              3
-            </button>
-            <span className="text-slate-400 font-bold px-1 select-none">
-              ...
-            </span>
-            <button className="w-7 h-7 border border-slate-200 text-slate-500 hover:text-slate-800 font-bold rounded-lg text-xs flex items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors">
-              12
-            </button>
-            <button className="p-1 border border-slate-200 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer">
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              placeholder="Cari nama atau NIK..."
+              disabled={isPending || isError}
+              className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl pl-9 pr-4 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold disabled:opacity-50"
+            />
           </div>
         </div>
+
+        {isPending ? (
+          <div className="flex items-center justify-center gap-2 py-16 text-slate-400 text-xs font-semibold">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Memuat data warga...</span>
+          </div>
+        ) : isError ? (
+          <div className="flex items-center justify-center gap-2 py-16 text-rose-600 text-xs font-semibold">
+            <AlertCircle className="w-4 h-4" />
+            <span>
+              Gagal memuat data: {(error as Error)?.message ?? 'Terjadi kesalahan'}
+            </span>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        const sorted = header.column.getIsSorted()
+                        return (
+                          <th
+                            key={header.id}
+                            onClick={header.column.getToggleSortingHandler()}
+                            className="text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider px-6 py-4 bg-slate-50/20 border-b border-slate-100 cursor-pointer select-none hover:text-slate-600 transition-colors"
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                            {sorted === 'asc'
+                              ? ' ↑'
+                              : sorted === 'desc'
+                                ? ' ↓'
+                                : ''}
+                          </th>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      className="border-b border-slate-100/60 hover:bg-slate-50/10 transition-colors"
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className="px-6 py-4">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  {table.getRowModel().rows.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={columns.length}
+                        className="px-6 py-10 text-center text-xs text-slate-400 font-semibold"
+                      >
+                        Tidak ada warga yang cocok dengan pencarian.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="px-6 py-4 flex justify-between items-center border-t border-slate-100 bg-slate-50/10 text-xs">
+              <span className="text-slate-400 font-semibold">
+                Menampilkan {firstRow}-{lastRow} dari {filteredRows.length} warga
+              </span>
+              <div className="flex items-center gap-1.5 select-none">
+                <button
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  className="p-1 border border-slate-200 text-slate-500 hover:text-slate-700 disabled:text-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {pageButtons.map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => table.setPageIndex(page - 1)}
+                    className={`w-7 h-7 font-bold rounded-lg text-xs flex items-center justify-center cursor-pointer transition-colors ${
+                      page === pageIndex + 1
+                        ? 'bg-[#0047cc] text-white shadow-sm shadow-[#0047cc]/15'
+                        : 'border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  className="p-1 border border-slate-200 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

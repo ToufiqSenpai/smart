@@ -9,6 +9,12 @@ Smart is an NPM Workspaces monorepo containing two applications:
 
 The frontend runs on port **3000** and makes API requests to the backend on port **5000**.
 
+## Repository & GitHub
+
+- **GitHub repository**: `ToufiqSenpai/smart` (origin: `git@github.com:ToufiqSenpai/smart.git`).
+- **GitHub access**: Use the GitHub CLI (`gh`) for all GitHub operations — issues, PRs, labels, etc. (e.g., `gh issue create --repo ToufiqSenpai/smart`).
+- **Default branch**: `main` (target branch for PRs).
+
 ## Quick Commands
 
 All commands run from the **repository root**.

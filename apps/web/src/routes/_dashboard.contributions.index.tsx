@@ -1,5 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { Toast } from '@/components/ui/Toast'
+import { Modal } from '@/components/ui/Modal'
+import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
+import { FileUploader } from '@/components/ui/FileUploader'
 import {
   Wallet,
   ChevronLeft,
@@ -8,8 +14,6 @@ import {
   FileText,
   CheckCircle2,
   AlertTriangle,
-  UploadCloud,
-  X,
   Eye,
   ListFilter,
   Copy,
@@ -156,11 +160,8 @@ function ContributionsPage() {
   const [notes, setNotes] = useState('')
 
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
   const [copiedText, setCopiedText] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
-
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -194,42 +195,6 @@ function ContributionsPage() {
     navigator.clipboard.writeText(text)
     setCopiedText(label)
     setTimeout(() => setCopiedText(null), 2000)
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = () => {
-    setIsDragging(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const file = e.dataTransfer.files[0]
-    processFile(file)
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    processFile(file)
-  }
-
-  const processFile = (file?: File) => {
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Ukuran file maksimal adalah 5MB.')
-        return
-      }
-      setPhotoFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
-    }
   }
 
   const handlePaymentSubmit = (e: React.FormEvent) => {
@@ -329,25 +294,10 @@ function ContributionsPage() {
   return (
     <div className="max-w-6xl mx-auto p-1 animate-[fadeIn_0.3s_ease-out] relative">
       {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-[#0047cc] text-white font-semibold text-xs px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-[slideIn_0.2s_ease-out]">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{toastMessage}</span>
-          <button
-            onClick={() => setToastMessage(null)}
-            className="p-1 hover:bg-[#003bb3] rounded-lg transition-colors ml-2 cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Page Title */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-[#0047cc] tracking-tight">
-          Iuran Bulanan
-        </h1>
-      </div>
+      <PageHeader title="Iuran Bulanan" />
 
       {/* Action Header */}
       <div className="bg-white rounded-3xl p-6 border border-slate-100/80 shadow-[0_4px_25px_rgba(0,0,0,0.015)] mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -565,286 +515,200 @@ function ContributionsPage() {
       </div>
 
       {/* MODAL 1: Bayar Sekarang (Upload Proof + Bank Details) */}
-      {isPaymentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full p-6 relative animate-[scaleIn_0.2s_ease-out] overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100 shrink-0">
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <Wallet className="w-4.5 h-4.5 text-[#0047cc]" />
-                Konfirmasi Pembayaran
-              </h2>
-              <button
-                onClick={() => setIsPaymentModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Modal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        title={
+          <span className="flex items-center gap-2">
+            <Wallet className="w-4.5 h-4.5 text-[#0047cc]" />
+            Konfirmasi Pembayaran
+          </span>
+        }
+        maxWidthClass="max-w-md"
+      >
+        <div className="space-y-5">
+          <div className="bg-blue-50/50 border border-blue-100/50 rounded-2xl p-4 space-y-3">
+            <span className="text-[10px] font-bold text-blue-900 block uppercase tracking-wider">
+              Instruksi Pembayaran
+            </span>
+            <p className="text-[11px] text-slate-500 leading-normal">
+              Silakan lakukan transfer iuran sebesar{' '}
+              <strong className="text-blue-700">Rp 150.000</strong> ke salah
+              satu rekening pengurus RT berikut:
+            </p>
 
-            <div className="flex-1 overflow-y-auto py-4 space-y-5 pr-1 -mr-1">
-              <div className="bg-blue-50/50 border border-blue-100/50 rounded-2xl p-4 space-y-3">
-                <span className="text-[10px] font-bold text-blue-900 block uppercase tracking-wider">
-                  Instruksi Pembayaran
-                </span>
-                <p className="text-[11px] text-slate-500 leading-normal">
-                  Silakan lakukan transfer iuran sebesar{' '}
-                  <strong className="text-blue-700">Rp 150.000</strong> ke salah
-                  satu rekening pengurus RT berikut:
-                </p>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-slate-100/80 shadow-sm text-xs">
-                    <div>
-                      <span className="text-slate-400 font-medium block text-[9px] uppercase tracking-wide">
-                        Bank Mandiri
-                      </span>
-                      <span className="text-slate-700 font-bold">
-                        123-000-456-7890
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy('123-000-456-7890', 'mandiri')}
-                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#0047cc] transition-all cursor-pointer flex items-center gap-1 shrink-0"
-                    >
-                      {copiedText === 'mandiri' ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-slate-100/80 shadow-sm text-xs">
-                    <div>
-                      <span className="text-slate-400 font-medium block text-[9px] uppercase tracking-wide">
-                        Bank BCA
-                      </span>
-                      <span className="text-slate-700 font-bold">
-                        778-990-1234
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCopy('778-990-1234', 'bca')}
-                      className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#0047cc] transition-all cursor-pointer flex items-center gap-1 shrink-0"
-                    >
-                      {copiedText === 'bca' ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-slate-100/80 shadow-sm text-xs">
+                <div>
+                  <span className="text-slate-400 font-medium block text-[9px] uppercase tracking-wide">
+                    Bank Mandiri
+                  </span>
+                  <span className="text-slate-700 font-bold">
+                    123-000-456-7890
+                  </span>
                 </div>
-
-                <div className="text-[10px] text-slate-400 font-bold text-center italic pt-1">
-                  A.n. Pengurus Lingkungan Smart Residence
-                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy('123-000-456-7890', 'mandiri')}
+                  className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#0047cc] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  {copiedText === 'mandiri' ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
               </div>
 
-              <form onSubmit={handlePaymentSubmit} className="space-y-4">
+              <div className="flex items-center justify-between bg-white rounded-xl p-3 border border-slate-100/80 shadow-sm text-xs">
                 <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Tanggal Bayar
-                  </label>
-                  <input
-                    type="date"
-                    value={payDate}
-                    onChange={(e) => setPayDate(e.target.value)}
-                    className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all font-semibold"
-                  />
+                  <span className="text-slate-400 font-medium block text-[9px] uppercase tracking-wide">
+                    Bank BCA
+                  </span>
+                  <span className="text-slate-700 font-bold">
+                    778-990-1234
+                  </span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy('778-990-1234', 'bca')}
+                  className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-[#0047cc] transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  {copiedText === 'bca' ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Bukti Transfer (Image/PDF)
-                  </label>
-                  <div
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-2 group ${
-                      isDragging
-                        ? 'border-[#0047cc] bg-blue-50/20'
-                        : 'border-slate-200/80 hover:border-[#0047cc]/40 bg-slate-50/40 hover:bg-slate-50/70'
-                    }`}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="image/*,application/pdf"
-                      className="hidden"
-                    />
-                    {photoPreview ? (
-                      <div className="relative w-full flex flex-col items-center gap-2 animate-[fadeIn_0.2s_ease-out]">
-                        <img
-                          src={photoPreview}
-                          alt="Preview Bukti"
-                          className="max-h-24 rounded-lg object-cover border border-slate-100"
-                        />
-                        <span className="text-[11px] font-semibold text-slate-500 truncate max-w-[200px]">
-                          {photoFile?.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setPhotoFile(null)
-                            setPhotoPreview(null)
-                          }}
-                          className="absolute -top-2 -right-2 bg-rose-500 hover:bg-rose-600 text-white rounded-full p-1 shadow-sm transition-colors cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-[#edf4ff] group-hover:text-[#0047cc] transition-colors shrink-0">
-                          <UploadCloud className="w-5 h-5" />
-                        </div>
-                        <span className="text-xs font-semibold text-slate-650">
-                          Tarik file ke sini atau klik untuk memilih file
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 mb-1.5 block">
-                    Catatan (Opsional)
-                  </label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="w-full bg-slate-50 hover:bg-slate-100/30 border border-slate-200/80 text-slate-700 placeholder-slate-400 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#0047cc] focus:ring-2 focus:ring-[#0047cc]/10 transition-all resize-none h-20 leading-relaxed"
-                    placeholder="Contoh: Pembayaran iuran via m-BCA Sudirman"
-                  />
-                </div>
-
-                <div className="pt-2 flex gap-3 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setIsPaymentModalOpen(false)}
-                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl py-3 text-xs transition-all cursor-pointer text-center"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 bg-[#0047cc] hover:bg-[#003bb3] active:bg-[#003399] disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl py-3 text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0047cc]/10 transition-all"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Mengirim...</span>
-                      </>
-                    ) : (
-                      <span>Kirim Konfirmasi</span>
-                    )}
-                  </button>
-                </div>
-              </form>
+            <div className="text-[10px] text-slate-400 font-bold text-center italic pt-1">
+              A.n. Pengurus Lingkungan Smart Residence
             </div>
           </div>
+
+          <form onSubmit={handlePaymentSubmit} className="space-y-4">
+            <Input
+              type="date"
+              label="Tanggal Bayar"
+              value={payDate}
+              onChange={(e) => setPayDate(e.target.value)}
+            />
+
+            <FileUploader
+              label="Bukti Transfer (Image/PDF)"
+              file={photoFile}
+              preview={photoPreview}
+              onFileChange={(f, p) => {
+                setPhotoFile(f)
+                setPhotoPreview(p)
+              }}
+              accept="image/*,application/pdf"
+            />
+
+            <Textarea
+              label="Catatan (Opsional)"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Contoh: Pembayaran iuran via m-BCA Sudirman"
+              rows={3}
+            />
+
+            <div className="pt-2 flex gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsPaymentModalOpen(false)}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl py-3 text-xs transition-all cursor-pointer text-center"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 bg-[#0047cc] hover:bg-[#003bb3] active:bg-[#003399] disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold rounded-xl py-3 text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0047cc]/10 transition-all"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Mengirim...</span>
+                  </>
+                ) : (
+                  <span>Kirim Konfirmasi</span>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
-      )}
+      </Modal>
 
       {/* MODAL 2: Lihat Rincian Tagihan */}
-      {isDetailsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-sm w-full p-6 relative animate-[scaleIn_0.2s_ease-out]">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-              <h2 className="text-base font-bold text-slate-800">
-                Rincian Tagihan Iuran
-              </h2>
-              <button
-                onClick={() => setIsDetailsModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-650 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      <Modal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        title="Rincian Tagihan Iuran"
+        maxWidthClass="max-w-sm"
+      >
+        <div className="space-y-3.5">
+          <div className="flex justify-between text-xs font-semibold text-slate-500">
+            <span>Periode Tagihan</span>
+            <span className="text-slate-800 font-bold">{billingPeriod}</span>
+          </div>
+          <div className="flex justify-between text-xs font-semibold text-slate-500">
+            <span>Status Tagihan</span>
+            {billingStatus === 'BELUM_BAYAR' ? (
+              <span className="text-rose-600 font-bold">Belum Bayar</span>
+            ) : billingStatus === 'PENDING' ? (
+              <span className="text-amber-600 font-bold">
+                Proses Verifikasi
+              </span>
+            ) : (
+              <span className="text-emerald-600 font-bold">Lunas</span>
+            )}
+          </div>
+
+          <div className="border-t border-slate-100 pt-3.5 space-y-2">
+            <div className="flex justify-between text-xs text-slate-600">
+              <span>Iuran Kebersihan &amp; Keamanan</span>
+              <span className="font-semibold text-slate-800">Rp 100.000</span>
             </div>
-
-            <div className="py-4 space-y-3.5">
-              <div className="flex justify-between text-xs font-semibold text-slate-500">
-                <span>Periode Tagihan</span>
-                <span className="text-slate-800 font-bold">
-                  {billingPeriod}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs font-semibold text-slate-500">
-                <span>Status Tagihan</span>
-                {billingStatus === 'BELUM_BAYAR' ? (
-                  <span className="text-rose-600 font-bold">Belum Bayar</span>
-                ) : billingStatus === 'PENDING' ? (
-                  <span className="text-amber-600 font-bold">
-                    Proses Verifikasi
-                  </span>
-                ) : (
-                  <span className="text-emerald-600 font-bold">Lunas</span>
-                )}
-              </div>
-
-              <div className="border-t border-slate-100 pt-3.5 space-y-2">
-                <div className="flex justify-between text-xs text-slate-600">
-                  <span>Iuran Kebersihan &amp; Keamanan</span>
-                  <span className="font-semibold text-slate-800">
-                    Rp 100.000
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs text-slate-600">
-                  <span>Kas Lingkungan (RT 05)</span>
-                  <span className="font-semibold text-slate-800">
-                    Rp 50.000
-                  </span>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-100 pt-3.5 flex justify-between text-sm font-bold text-slate-800">
-                <span>Total Biaya</span>
-                <span className="text-[#0047cc] font-extrabold text-base">
-                  Rp 150.000
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                onClick={() => setIsDetailsModalOpen(false)}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl py-3 text-xs transition-all cursor-pointer text-center"
-              >
-                Tutup
-              </button>
+            <div className="flex justify-between text-xs text-slate-600">
+              <span>Kas Lingkungan (RT 05)</span>
+              <span className="font-semibold text-slate-800">Rp 50.000</span>
             </div>
           </div>
+
+          <div className="border-t border-slate-100 pt-3.5 flex justify-between text-sm font-bold text-slate-800">
+            <span>Total Biaya</span>
+            <span className="text-[#0047cc] font-extrabold text-base">
+              Rp 150.000
+            </span>
+          </div>
         </div>
-      )}
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={() => setIsDetailsModalOpen(false)}
+            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl py-3 text-xs transition-all cursor-pointer text-center"
+          >
+            Tutup
+          </button>
+        </div>
+      </Modal>
 
       {/* MODAL 3: Lihat Bukti Transfer Receipt */}
-      {isReceiptModalOpen && selectedTransaction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-sm w-full p-6 relative animate-[scaleIn_0.2s_ease-out]">
-            <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-              <h2 className="text-base font-bold text-slate-800">
-                Bukti Pembayaran
-              </h2>
-              <button
-                onClick={() => {
-                  setIsReceiptModalOpen(false)
-                  setSelectedTransaction(null)
-                }}
-                className="p-1.5 text-slate-400 hover:text-slate-650 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="py-4 space-y-4">
+      <Modal
+        isOpen={isReceiptModalOpen && selectedTransaction !== null}
+        onClose={() => {
+          setIsReceiptModalOpen(false)
+          setSelectedTransaction(null)
+        }}
+        title="Bukti Pembayaran"
+        maxWidthClass="max-w-sm"
+      >
+        {selectedTransaction && (
+          <>
+            <div className="space-y-4">
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col gap-2.5">
                 <div className="flex justify-between text-xs text-slate-500 font-semibold">
                   <span>Nama Transaksi</span>
@@ -915,7 +779,7 @@ function ContributionsPage() {
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
+            <div className="mt-6 flex justify-end">
               <button
                 onClick={() => {
                   setIsReceiptModalOpen(false)
@@ -926,9 +790,9 @@ function ContributionsPage() {
                 Tutup
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   )
 }

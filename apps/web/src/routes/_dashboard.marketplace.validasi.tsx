@@ -1,6 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { CheckCircle2, X, Info } from 'lucide-react'
+import { Info } from 'lucide-react'
+import { Toast } from '@/components/ui/Toast'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 export const Route = createFileRoute('/_dashboard/marketplace/validasi')({
   component: ValidasiUmkmPage,
@@ -100,25 +103,10 @@ function ValidasiUmkmPage() {
   return (
     <div className="max-w-6xl mx-auto p-1 animate-[fadeIn_0.3s_ease-out] relative">
       {/* Toast Alert */}
-      {toastMessage && (
-        <div className="fixed top-6 right-6 z-50 bg-[#0047cc] text-white font-semibold text-xs px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-2.5 animate-[slideIn_0.2s_ease-out]">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{toastMessage}</span>
-          <button
-            onClick={() => setToastMessage(null)}
-            className="p-1 hover:bg-[#003bb3] rounded-lg transition-colors ml-2 cursor-pointer"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
 
       {/* Page Title */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-[#0047cc] tracking-tight">
-          Validasi UMKM
-        </h1>
-      </div>
+      <PageHeader title="Validasi UMKM" />
 
       {/* Roster Grid list of pending registrations */}
       {pendingList.length > 0 ? (
@@ -195,15 +183,11 @@ function ValidasiUmkmPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-white border border-slate-100 rounded-3xl p-12 text-center shadow-sm max-w-lg mx-auto mt-8">
-          <Info className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-slate-700 font-bold text-sm">
-            Semua UMKM tervalidasi
-          </h3>
-          <p className="text-slate-400 text-xs mt-1">
-            Tidak ada pengajuan pendaftaran UMKM baru yang menunggu persetujuan.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Info className="w-10 h-10" />}
+          title="Semua UMKM tervalidasi"
+          description="Tidak ada pengajuan pendaftaran UMKM baru yang menunggu persetujuan."
+        />
       )}
     </div>
   )
