@@ -1,4 +1,5 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
+
 import { useForm } from '@tanstack/react-form'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -233,6 +234,17 @@ function Login() {
             )}
           />
         </form>
+
+        <div className="mt-6 text-center text-xs text-slate-500 border-t border-slate-100 pt-4">
+          Belum memiliki akun?{' '}
+          <Link
+            to="/register"
+            className="text-[#0047cc] font-semibold hover:underline cursor-pointer"
+          >
+            Daftar Sekarang
+          </Link>
+        </div>
+
 
       </div>
     </div>

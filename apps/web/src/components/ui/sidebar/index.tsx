@@ -29,7 +29,7 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: 'Announcement',
+    label: 'Pengumuman',
     icon: Megaphone,
     basePath: '/announcements',
     items: [
@@ -38,7 +38,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: 'Complaints',
+    label: 'Keluhan',
     icon: AlertTriangle,
     basePath: '/complaints',
     items: [
@@ -47,7 +47,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: 'Residents',
+    label: 'Warga',
     icon: Users,
     basePath: '/residents',
     items: [
@@ -56,7 +56,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: 'Marketplace',
+    label: 'Pasar Warga',
     icon: Store,
     basePath: '/marketplace',
     items: [
@@ -65,7 +65,7 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: 'Contributions',
+    label: 'Iuran',
     icon: Coins,
     basePath: '/contributions',
     items: [
