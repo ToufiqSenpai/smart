@@ -41,7 +41,7 @@ export default function KetuaEditIuran() {
 
           <div className="mb-6">
             <label className="block text-[13px] font-semibold text-text-primary mb-1" htmlFor="jenisIuran">Jenis Iuran</label>
-            <select className="w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-bg-card border border-border-subtle rounded-[14px] outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_var(--navy-brand-light)] placeholder:text-text-muted" id="jenisIuran" required value={form.jenis} onChange={(e) => updateField("jenis", e.target.value)}>
+            <select className="w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-bg-card border border-border-subtle rounded-[14px] outline-none transition-all focus:border-primary focus:shadow-[0_0_0_3px_var(--navy-brand-light)] placeholder:text-text-muted" id="jenisIuran" required value={form.jenis} onChange={(e) => setForm({...form, jenis: e.target.value})}>
               <option value="">-- Pilih Jenis --</option>
               <option value="Wajib">Wajib</option>
               <option value="Opsional">Opsional</option>
@@ -51,10 +51,6 @@ export default function KetuaEditIuran() {
               <option value="Lainnya">Lainnya</option>
             </select>
             <div className="text-xs text-text-muted mt-1">Jenis iuran menentukan kategori tagihan.</div>
-            <div className="text-xs text-error mt-1 hidden items-center gap-1.5" id="jenisIuranError">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-              <span>Jenis iuran harus dipilih</span>
-            </div>
           </div>
 
           <div className="mb-6">

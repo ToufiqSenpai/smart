@@ -1,20 +1,19 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-
-var pengurusData = [
-  { id: 1, nik: '3275010101010001', nama: 'Budi Santoso', jabatan: 'Ketua RT' },
-  { id: 2, nik: '3275010101010006', nama: 'Dewi Lestari', jabatan: 'Wakil Ketua' },
-  { id: 3, nik: '3275010101010007', nama: 'Agus Saputra', jabatan: 'Sekretaris' },
-  { id: 4, nik: '3275010101010009', nama: 'Hendra Gunawan', jabatan: 'Bendahara' },
-  { id: 5, nik: '3275010101010010', nama: 'Fitri Handayani', jabatan: 'Sie Keamanan' },
-]
+import { getOfficersApi } from "../../utils/mockApi"
 
 export default function KelolaPengurus() {
   var navigate = useNavigate()
   var [search, setSearch] = useState('')
+  var [data, setData] = useState([])
+  var [loading, setLoading] = useState(true)
 
-  var filteredData = pengurusData.filter(function(p) {
+  useEffect(() => {
+    getOfficersApi().then(setData).finally(() => setLoading(false))
+  }, [])
+
+  var filteredData = data.filter(function(p) {
     return p.nama.toLowerCase().includes(search.toLowerCase()) || p.nik.includes(search) || p.jabatan.toLowerCase().includes(search.toLowerCase())
   })
 
@@ -57,7 +56,11 @@ export default function KelolaPengurus() {
               </tr>
             </thead>
             <tbody>
-              {filteredData.map(function(p, index) {
+              {loading ? (
+                <tr><td colSpan="5" className="text-center py-12 text-text-muted text-[13.5px]">Memuat data...</td></tr>
+              ) : filteredData.length === 0 ? (
+                <tr><td colSpan="5" className="text-center py-12 text-text-muted text-[13.5px]">Tidak ada data pengurus.</td></tr>
+              ) : filteredData.map(function(p, index) {
                 return (
                   <tr key={p.id} className="hover:bg-primary-lighter">
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{index + 1}</td>

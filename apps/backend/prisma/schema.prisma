@@ -72,6 +72,7 @@ model PengurusRt {
 model Iuran {
   idIuran           String   @id @default(uuid()) @map("id_iuran") @db.VarChar(36)
   namaIuran         String   @map("nama_iuran") @db.VarChar(40)
+  jenisIuran        String   @map("jenis_iuran") @db.VarChar(15)
   nominal           Decimal  @db.Decimal(20, 2)
   tanggalJatuhTempo DateTime @map("tanggal_jatuh_tempo") @db.Date
   statusAktif       Boolean  @map("status_aktif")

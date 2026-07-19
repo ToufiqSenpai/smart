@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
 
 export default function WargaMonitoringLaporan() {
@@ -92,10 +93,10 @@ export default function WargaMonitoringLaporan() {
           </div>
           <span className="badge-count" id="rowCount">3 laporan</span>
         </div>
-        <a href="/warga/buat-laporan" className="btn-primary-sm">
+        <Link to="/buat-laporan" className="btn-primary-sm">
           <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
           Buat Laporan
-        </a>
+        </Link>
       </div>
 
       <div className="table-container">

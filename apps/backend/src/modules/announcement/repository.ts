@@ -21,12 +21,14 @@ export async function findAll() {
     include: { pengurus: { include: { masyarakat: true } } },
     orderBy: { tanggalPengumuman: 'desc' },
   });
-  return data.map((item: { idPengumuman: string; judul: string; tanggalPengumuman: Date; statusPublikasi: string; pengurus: { masyarakat: { nama: string } } }) => ({
+  return data.map((item: any) => ({
     id: item.idPengumuman,
     judul: item.judul,
+    isi_pengumuman: item.isiPengumuman,
+    lampiran: item.lampiran,
     tanggal_pengumuman: item.tanggalPengumuman,
     status_publikasi: item.statusPublikasi,
-    nama_pembuat: item.pengurus.masyarakat.nama,
+    author: item.pengurus.masyarakat.nama,
   }));
 }
 
@@ -43,7 +45,7 @@ export async function findById(id: string) {
     lampiran: item.lampiran,
     tanggal_pengumuman: item.tanggalPengumuman,
     status_publikasi: item.statusPublikasi,
-    nama_pembuat: item.pengurus.masyarakat.nama,
+    author: item.pengurus.masyarakat.nama,
   };
 }
 

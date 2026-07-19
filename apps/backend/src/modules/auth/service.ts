@@ -2,29 +2,32 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import * as authRepository from "./repository.js";
 
-const JWT_SECRET = "smart-rt-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET || "smart-rt-secret-key";
 
 interface LoginBody {
-  email: string;
+  email?: string;
+  username?: string;
   password: string;
 }
 
 export async function login(payload: LoginBody) {
-  const { email, password } = payload;
+  const { email, username, password } = payload;
 
-  if (!email || !password) {
+  if ((!email && !username) || !password) {
     throw {
       status: 400,
-      message: "Email and password are required",
+      message: "Email or username and password are required",
       code: "VALIDATION_ERROR",
     };
   }
 
-  const user = await authRepository.findByEmail(email);
+  const user = email
+    ? await authRepository.findByEmail(email)
+    : await authRepository.findByUsername(username!);
   if (!user) {
     throw {
       status: 401,
-      message: "Invalid email or password",
+      message: "Invalid email/username or password",
       code: "INVALID_CREDENTIALS",
     };
   }
@@ -39,7 +42,7 @@ export async function login(payload: LoginBody) {
   if (!passwordMatch) {
     throw {
       status: 401,
-      message: "Invalid email or password",
+      message: "Invalid email/username or password",
       code: "INVALID_CREDENTIALS",
     };
   }
@@ -52,14 +55,17 @@ export async function login(payload: LoginBody) {
 
   if (user.pengurusRt) {
     role = user.pengurusRt.jabatan == "CHAIRPERSON" ? "CHAIRPERSON" : "OFFICER";
-  } 
+  }
 
   return {
     accessToken: token,
     user: {
       id: user.idMasyarakat,
       nama: user.nama,
+      username: user.username,
       role,
+      statusKeanggotaan: user.warga?.statusKeanggotaan ?? null,
+      jabatan: user.pengurusRt?.jabatan ?? null,
     },
   };
 }

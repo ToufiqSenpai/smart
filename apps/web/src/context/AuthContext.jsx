@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback } from "react"
-import { mockLogin } from "../utils/mockApi"
+import { loginApi } from "../utils/mockApi"
 
 const AuthContext = createContext(null)
 
@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (credentials) => {
     setLoading(true)
     try {
-      const result = await mockLogin(credentials)
+      const result = await loginApi(credentials)
       setUser(result.user)
       return result
     } finally {

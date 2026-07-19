@@ -24,8 +24,6 @@ export default function WargaDetailLaporan() {
               </span>
               <h2 className="font-grotesk text-2xl font-bold text-text-primary tracking-tight">Lampu Jalan Mati</h2>
               <div className="flex flex-wrap gap-2 gap-x-6 mt-2 text-[13px] text-text-secondary">
-                <span>No. Laporan: <span className="font-mono text-xs">007/KEND/RT08/VII/2026</span></span>
-                <span>•</span>
                 <span>Tanggal: <span className="font-mono text-xs">14 Juli 2026</span></span>
                 <span>•</span>
                 <span>Oleh: <span>Budi Santoso</span></span>
@@ -82,19 +80,6 @@ export default function WargaDetailLaporan() {
               </div>
             </div>
 
-            <div className="mb-0">
-              <div className="font-grotesk text-sm font-bold text-text-primary tracking-tight mb-2 flex items-center gap-2">
-                <svg className="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 14" /></svg>
-                Riwayat Status
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3 px-4 py-2 bg-bg rounded-lg border border-border-subtle text-[13px]">
-                  <span className="w-2 h-2 rounded-full bg-warning flex-shrink-0" />
-                  <span className="flex-1 text-text-secondary"><strong className="text-text-primary">Laporan dibuat</strong></span>
-                  <span className="font-mono text-[11px] text-text-muted">14 Jul 2026, 08:30</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

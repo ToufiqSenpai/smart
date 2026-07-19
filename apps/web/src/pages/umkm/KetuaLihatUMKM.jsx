@@ -1,6 +1,25 @@
+import { useState, useEffect } from "react"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import { getBusinessesApi } from "../../utils/mockApi"
+
+const statusClass = {
+  VERIFIED: "status-badge-td success",
+  PENDING: "status-badge-td warning",
+  REJECTED: "status-badge-td danger",
+}
+const statusLabel = { VERIFIED: "Terverifikasi", PENDING: "Menunggu", REJECTED: "Ditolak" }
 
 export default function KetuaLihatUMKM() {
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    
+    getBusinessesApi({ keyword: search, status: statusFilter }).then(setData).finally(() => setLoading(false))
+  }, [search, statusFilter])
+
   return (
     <DashboardLayout>
       <style>{`
@@ -50,25 +69,25 @@ export default function KetuaLihatUMKM() {
         <div className="toolbar-left">
           <div className="search-wrapper">
             <svg className="icon search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" /></svg>
-            <input type="text" placeholder="Cari nama usaha atau pemilik..." />
+            <input type="text" placeholder="Cari nama usaha atau pemilik..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="filter-group">
             <label htmlFor="statusFilter">Status</label>
-            <select id="statusFilter">
+            <select id="statusFilter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">Semua</option>
-              <option value="verified">Terverifikasi</option>
-              <option value="pending">Menunggu</option>
-              <option value="rejected">Ditolak</option>
+              <option value="VERIFIED">Terverifikasi</option>
+              <option value="PENDING">Menunggu</option>
+              <option value="REJECTED">Ditolak</option>
             </select>
           </div>
-          <span className="badge-count">5 UMKM</span>
+          <span className="badge-count">{data.length} UMKM</span>
         </div>
       </div>
 
       <div className="table-container">
         <div className="table-header">
           <h3>Daftar UMKM</h3>
-          <span style={{ fontSize: "12px", color: "var(--ink-subtle)" }}>Total: 5 UMKM</span>
+          <span style={{ fontSize: "12px", color: "var(--ink-subtle)" }}>Total: {data.length} UMKM</span>
         </div>
         <div className="table-wrapper">
           <table>
@@ -78,57 +97,25 @@ export default function KetuaLihatUMKM() {
                 <th>Nama Usaha</th>
                 <th>Pemilik</th>
                 <th>Jenis</th>
-                <th>Tanggal Daftar</th>
                 <th>Status</th>
                 <th style={{ textAlign: "right" }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>1</td>
-                <td style={{ fontWeight: 600, color: "var(--ink-black)" }}>Warung Makan "Budi"</td>
-                <td>Budi Santoso</td>
-                <td>Kuliner</td>
-                <td>10/07/2026</td>
-                <td><span className="status-badge-td success">Terverifikasi</span></td>
-                <td style={{ textAlign: "right" }}><a href="/ketua/lihat-umkm" className="action-link">Detail</a></td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td style={{ fontWeight: 600, color: "var(--ink-black)" }}>Laundry "Bersih"</td>
-                <td>Ani Wijaya</td>
-                <td>Jasa</td>
-                <td>12/07/2026</td>
-                <td><span className="status-badge-td warning">Menunggu</span></td>
-                <td style={{ textAlign: "right" }}><a href="/ketua/lihat-umkm" className="action-link">Detail</a></td>
-              </tr>
-              <tr>
-                <td>3</td>
-                <td style={{ fontWeight: 600, color: "var(--ink-black)" }}>Toko Kelontong "Murah"</td>
-                <td>Siti Rahayu</td>
-                <td>Perdagangan</td>
-                <td>08/07/2026</td>
-                <td><span className="status-badge-td success">Terverifikasi</span></td>
-                <td style={{ textAlign: "right" }}><a href="/ketua/lihat-umkm" className="action-link">Detail</a></td>
-              </tr>
-              <tr>
-                <td>4</td>
-                <td style={{ fontWeight: 600, color: "var(--ink-black)" }}>Bengkel "Jaya"</td>
-                <td>Agus Saputra</td>
-                <td>Otomotif</td>
-                <td>05/07/2026</td>
-                <td><span className="status-badge-td success">Terverifikasi</span></td>
-                <td style={{ textAlign: "right" }}><a href="/ketua/lihat-umkm" className="action-link">Detail</a></td>
-              </tr>
-              <tr>
-                <td>5</td>
-                <td style={{ fontWeight: 600, color: "var(--ink-black)" }}>Katering "Nikmat"</td>
-                <td>Fitriana</td>
-                <td>Kuliner</td>
-                <td>15/07/2026</td>
-                <td><span className="status-badge-td danger">Ditolak</span></td>
-                <td style={{ textAlign: "right" }}><a href="/ketua/lihat-umkm" className="action-link">Detail</a></td>
-              </tr>
+              {loading ? (
+                <tr><td colSpan="6" style={{ textAlign: "center", padding: "48px 24px", color: "var(--ink-muted)" }}>Memuat data...</td></tr>
+              ) : data.length === 0 ? (
+                <tr><td colSpan="6" style={{ textAlign: "center", padding: "48px 24px", color: "var(--ink-muted)" }}>Tidak ada UMKM.</td></tr>
+              ) : data.map((u, i) => (
+                <tr key={u.id}>
+                  <td>{i + 1}</td>
+                  <td style={{ fontWeight: 600, color: "var(--ink-black)" }}>{u.nama_usaha}</td>
+                  <td>{u.pemilik}</td>
+                  <td>{u.jenis_usaha}</td>
+                  <td><span className={statusClass[u.status_verifikasi]}>{statusLabel[u.status_verifikasi]}</span></td>
+                  <td style={{ textAlign: "right" }}><a href={`/ketua/lihat-umkm/${u.id}`} className="action-link">Detail</a></td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

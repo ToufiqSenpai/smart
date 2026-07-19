@@ -1,13 +1,6 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-
-const announcements = [
-  { id: 1, judul: "Kerja Bakti RT 08", isi: "Kerja bakti sosial berkala akan dilaksanakan hari Minggu, 19 Juli 2026 pukul 07.00 WIB. Mohon kehadiran dan kontribusi aktif seluruh perwakilan kepala keluarga warga RT 08 demi kenyamanan lingkungan kita bersama. Bawa peralatan kebersihan masing-masing.", tanggal: "2026-07-14", status: "publik", author: "Ketua RT", lampiran: "jadwal-kerja-bakti.pdf" },
-  { id: 2, judul: "Perubahan Jadwal Ronda Malam", isi: "Jadwal ronda malam mengalami penyesuaian tim demi pemerataan keamanan pos mulai pekan ini. Silakan periksa jadwal detail terbaru pada papan pengumuman di pos ronda. Jadwal baru mulai berlaku 20 Juli 2026.", tanggal: "2026-07-12", status: "publik", author: "Humas RT", lampiran: null },
-  { id: 3, judul: "Pendaftaran UMKM Binaan", isi: "Pendaftaran UMKM binaan RT 08 resmi dibuka hingga tanggal 31 Juli 2026. Daftarkan dan verifikasikan bisnis lokal Anda segera. Fasilitas yang didapatkan: pembinaan usaha, promosi di media sosial RT, dan akses ke pasar lokal.", tanggal: "2026-07-10", status: "draft", author: "Bendahara", lampiran: "formulir-umkm.pdf" },
-  { id: 4, judul: "Laporan Keuangan Semester I 2026", isi: "Laporan pertanggungjawaban dana kas RT 08 periode Januari - Juni 2026 kini telah selesai dibukukan secara transparan. Dapat diakses melalui menu Laporan Keuangan atau hubungi Bendahara RT.", tanggal: "2026-07-08", status: "publik", author: "Bendahara", lampiran: "laporan-keuangan-semester1-2026.pdf" },
-  { id: 5, judul: "Pengumuman Pembagian Sembako", isi: "Pembagian sembako untuk warga kurang mampu akan dilaksanakan pada hari Sabtu, 25 Juli 2026 pukul 09.00 WIB di balai pertemuan RT. Bawa KTP dan kartu keluarga.", tanggal: "2026-07-15", status: "publik", author: "Ketua RT", lampiran: null },
-]
+import { getAnnouncementsApi } from "../../utils/mockApi"
 
 const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
 
@@ -20,10 +13,17 @@ export default function WargaPengumuman() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("publik")
   const [expanded, setExpanded] = useState({})
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const filtered = announcements.filter((item) => {
-    const matchSearch = item.judul.toLowerCase().includes(search.toLowerCase()) || item.isi.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === "all" || item.status === statusFilter
+  useEffect(() => {
+    getAnnouncementsApi().then(setData).finally(() => setLoading(false))
+  }, [])
+
+  const filtered = data.filter((item) => {
+    const statusMap = { PUBLISHED: "publik", DRAFT: "draft" }
+    const matchSearch = item.judul.toLowerCase().includes(search.toLowerCase()) || item.isi_pengumuman.toLowerCase().includes(search.toLowerCase())
+    const matchStatus = statusFilter === "all" || statusMap[item.status_publikasi] === statusFilter
     return matchSearch && matchStatus
   })
 
@@ -57,7 +57,11 @@ export default function WargaPengumuman() {
         </div>
 
         <div className="flex flex-col gap-4">
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-16 px-6 text-text-muted bg-bg-card rounded-[20px] border border-border-subtle">
+              <h3 className="font-grotesk text-[20px] font-bold text-text-primary mb-2">Memuat...</h3>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="text-center py-16 px-6 text-text-muted bg-bg-card rounded-[20px] border border-border-subtle">
               <svg className="w-14 h-14 text-border-subtle mb-4 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" /><line x1="8" y1="8" x2="16" y2="8" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="8" y1="16" x2="13" y2="16" /></svg>
               <h3 className="font-grotesk text-[20px] font-bold text-text-primary mb-2">Belum ada pengumuman</h3>
@@ -66,20 +70,21 @@ export default function WargaPengumuman() {
           ) : (
             filtered.map((item) => {
               const isExpanded = expanded[item.id]
+              const statusIsPublished = item.status_publikasi === "PUBLISHED"
               return (
                 <div key={item.id} className="bg-bg-card rounded-[20px] border border-border-subtle shadow-lux p-6 px-8 transition-all cursor-pointer hover:-translate-y-0.5 hover:shadow-lux-hover hover:border-border-hover" onClick={() => toggleExpand(item.id)}>
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="font-grotesk text-[18px] font-bold text-text-primary tracking-tight leading-snug">{item.judul}</div>
-                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.05em] shrink-0 ${item.status === "draft" ? "bg-warning-bg text-warning border border-[rgba(180,83,9,0.1)]" : "bg-success-bg text-success border border-[rgba(21,128,61,0.1)]"}`}>
-                      {item.status === "publik" ? "● Publik" : "● Draft"}
+                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.05em] shrink-0 ${statusIsPublished ? "bg-success-bg text-success border border-[rgba(21,128,61,0.1)]" : "bg-warning-bg text-warning border border-[rgba(180,83,9,0.1)]"}`}>
+                      {statusIsPublished ? "● Publik" : "● Draft"}
                     </span>
                   </div>
                   <div className={`text-[14px] text-text-muted leading-relaxed mb-4 ${isExpanded ? "" : "line-clamp-3"}`}>
-                    {item.isi}
+                    {item.isi_pengumuman}
                   </div>
                   <div className="flex items-center justify-between flex-wrap gap-3 pt-4 border-t border-border-subtle text-[12.5px] text-text-muted">
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-[12px]">{formatDate(item.tanggal)}</span>
+                      <span className="font-mono text-[12px]">{formatDate(item.tanggal_pengumuman)}</span>
                       <span>•</span>
                       <span className="text-text-muted">{item.author}</span>
                     </div>

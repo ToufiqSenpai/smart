@@ -1,13 +1,7 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-
-var initialIuranData = [
-  { id: 1, nama: 'Iuran RT', jenis: 'Wajib', nominal: 50000, jatuhTempo: '2026-07-31', status: 'active', createdAt: '2026-01-01' },
-  { id: 2, nama: 'Iuran Keamanan', jenis: 'Keamanan', nominal: 30000, jatuhTempo: '2026-07-31', status: 'active', createdAt: '2026-01-01' },
-  { id: 3, nama: 'Iuran Sosial', jenis: 'Sosial', nominal: 20000, jatuhTempo: '2026-06-30', status: 'active', createdAt: '2026-01-01' },
-  { id: 4, nama: 'Iuran Kebersihan', jenis: 'Kebersihan', nominal: 15000, jatuhTempo: '2026-06-30', status: 'inactive', createdAt: '2026-01-01' }
-]
+import { getDuesApi } from "../../utils/mockApi"
 
 function formatRupiah(angka) {
   return new Intl.NumberFormat('id-ID', {
@@ -26,7 +20,12 @@ function formatDate(dateStr) {
 
 export default function KetuaKelolaIuran() {
   var navigate = useNavigate()
-  var [iuranData] = useState(initialIuranData)
+  var [iuranData, setIuranData] = useState([])
+  var [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getDuesApi().then(setIuranData).finally(() => setLoading(false))
+  }, [])
 
   return (
     <DashboardLayout>
@@ -77,18 +76,21 @@ export default function KetuaKelolaIuran() {
               </tr>
             </thead>
             <tbody>
-              {iuranData.map(function(iuran, index) {
-                var statusLabel = iuran.status === 'active' ? 'Aktif' : 'Nonaktif'
-                var actionLabel = iuran.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'
-
+              {loading ? (
+                <tr><td colSpan="7" className="text-center py-12 text-text-muted text-[13.5px]">Memuat data...</td></tr>
+              ) : iuranData.length === 0 ? (
+                <tr><td colSpan="7" className="text-center py-12 text-text-muted text-[13.5px]">Tidak ada data iuran.</td></tr>
+              ) : iuranData.map(function(iuran, index) {
+                var statusLabel = iuran.status_aktif ? 'Aktif' : 'Nonaktif'
+                var actionLabel = iuran.status_aktif ? 'Nonaktifkan' : 'Aktifkan'
                 return (
                   <tr key={iuran.id} className="hover:bg-primary-lighter">
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{index + 1}</td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6" style={{ fontWeight: 600, color: "var(--ink-black)" }}>{iuran.nama}</td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{iuran.jenis}</td>
+                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6" style={{ fontWeight: 600, color: "var(--ink-black)" }}>{iuran.nama_iuran}</td>
+                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{iuran.jenis_iuran}</td>
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{formatRupiah(iuran.nominal)}</td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{formatDate(iuran.jatuhTempo)}</td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6"><span className={"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap " + (iuran.status === 'active' ? 'bg-success-bg text-success border border-success/10' : 'bg-error-bg text-error border border-error/10')}>{statusLabel}</span></td>
+                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{formatDate(iuran.tanggal_jatuh_tempo)}</td>
+                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6"><span className={"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap " + (iuran.status_aktif ? 'bg-success-bg text-success border border-success/10' : 'bg-error-bg text-error border border-error/10')}>{statusLabel}</span></td>
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 text-right pr-6">
                       <a href="/ketua/kelola-iuran" className="text-[12.5px] text-primary font-semibold no-underline hover:underline" onClick={(e) => { e.preventDefault(); navigate('/edit-iuran/' + iuran.id) }}>Edit</a>
                       <a href="/ketua/kelola-iuran" className="text-[12.5px] text-primary font-semibold no-underline hover:underline ml-3">{actionLabel}</a>

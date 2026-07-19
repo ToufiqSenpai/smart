@@ -67,7 +67,7 @@ function Toast({ type, title, message, onClose }) {
 export default function Login() {
   const navigate = useNavigate()
   const auth = useAuth()
-  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
@@ -85,7 +85,7 @@ export default function Login() {
 
   const validate = () => {
     const newErrors = {}
-    if (!username.trim()) newErrors.username = "Username harus diisi"
+    if (!email.trim()) newErrors.email = "Email harus diisi"
     if (!password.trim()) newErrors.password = "Password harus diisi"
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -99,13 +99,13 @@ export default function Login() {
     setLoading(true)
 
     try {
-      await auth.login({ username: username.trim(), password: password.trim() })
+      await auth.login({ email: email.trim(), password: password.trim() })
       addToast("success", "Berhasil masuk!", "Selamat datang di SMART RT.")
       setTimeout(() => navigate("/dashboard"), 800)
     } catch (err) {
       addToast("error", "Gagal masuk", err.message)
       setLoading(false)
-      setErrors({ username: " ", password: " " })
+      setErrors({ email: " ", password: " " })
     }
   }
 
@@ -350,21 +350,21 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} noValidate>
               <div className="form-group">
-                <label htmlFor="username">Username</label>
+                <label htmlFor="email">Email</label>
                 <input
-                  type="text"
-                  id="username"
-                  className={`form-control${errors.username ? " error" : ""}`}
-                  placeholder="Masukkan username Anda"
-                  autoComplete="username"
+                  type="email"
+                  id="email"
+                  className={`form-control${errors.email ? " error" : ""}`}
+                  placeholder="Masukkan email Anda"
+                  autoComplete="email"
                   required
-                  value={username}
-                  onChange={(e) => { setUsername(e.target.value); if (e.target.value.trim()) setErrors((prev) => ({ ...prev, username: undefined })) }}
-                  onBlur={(e) => { if (!e.target.value.trim()) setErrors((prev) => ({ ...prev, username: "Username harus diisi" })) }}
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if (e.target.value.trim()) setErrors((prev) => ({ ...prev, email: undefined })) }}
+                  onBlur={(e) => { if (!e.target.value.trim()) setErrors((prev) => ({ ...prev, email: "Email harus diisi" })) }}
                 />
-                <div className={`error-text${errors.username ? " show" : ""}`}>
+                <div className={`error-text${errors.email ? " show" : ""}`}>
                   {ICONS.error}
-                  <span>Username harus diisi</span>
+                  <span>Email harus diisi</span>
                 </div>
               </div>
 

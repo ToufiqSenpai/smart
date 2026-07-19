@@ -13,6 +13,9 @@ export async function createAnnouncement(user: AuthUser, data: { judul: string; 
   if (!data.judul || !data.isi_pengumuman || !data.status_publikasi) {
     throw { status: 400, message: 'judul, isi_pengumuman, dan status_publikasi wajib diisi', code: 'VALIDATION_ERROR' };
   }
+  if (data.judul.length > 15) {
+    throw { status: 400, message: 'judul maksimal 15 karakter', code: 'VALIDATION_ERROR' };
+  }
   if (!['PUBLISHED', 'DRAFT'].includes(data.status_publikasi)) {
     throw { status: 400, message: 'status_publikasi harus PUBLISHED atau DRAFT', code: 'VALIDATION_ERROR' };
   }

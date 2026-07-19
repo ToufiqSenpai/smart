@@ -16,9 +16,16 @@ export async function getDashboard(user: AuthUser) {
     const totalUMKM = await dashboardRepository.countAllUmkm();
     const totalLaporanKendala = await dashboardRepository.countAllLaporanKendala();
     const pengumumanAktif = await dashboardRepository.countPengumumanByStatus(
-      "Publish",
+      "PUBLISHED",
     );
     const totalPengeluaranKas = await dashboardRepository.sumPengeluaranKas();
+
+    const pendingCounts = {
+      umkmMenunggu: await dashboardRepository.countUmkmPending(),
+      pembayaranMenunggu: await dashboardRepository.countPaymentsPending(),
+      laporanMenungguValidasi: await dashboardRepository.countIssuesByStatus("PENDING"),
+      laporanMenungguTindakLanjut: await dashboardRepository.countIssuesByStatus("VERIFIED"),
+    };
 
     return {
       totalWarga,
@@ -28,6 +35,7 @@ export async function getDashboard(user: AuthUser) {
       totalLaporanKendala,
       pengumumanAktif,
       totalPengeluaranKas,
+      pendingCounts,
     };
   }
 
@@ -36,9 +44,16 @@ export async function getDashboard(user: AuthUser) {
     const totalUMKM = await dashboardRepository.countAllUmkm();
     const totalLaporanKendala = await dashboardRepository.countAllLaporanKendala();
     const pengumumanAktif = await dashboardRepository.countPengumumanByStatus(
-      "Publish",
+      "PUBLISHED",
     );
     const totalPengeluaranKas = await dashboardRepository.sumPengeluaranKas();
+
+    const pendingCounts = {
+      umkmMenunggu: await dashboardRepository.countUmkmPending(),
+      pembayaranMenunggu: await dashboardRepository.countPaymentsPending(),
+      laporanMenungguValidasi: await dashboardRepository.countIssuesByStatus("PENDING"),
+      laporanMenungguTindakLanjut: await dashboardRepository.countIssuesByStatus("VERIFIED"),
+    };
 
     return {
       totalWarga,
@@ -46,6 +61,7 @@ export async function getDashboard(user: AuthUser) {
       totalLaporanKendala,
       pengumumanAktif,
       totalPengeluaranKas,
+      pendingCounts,
     };
   }
 
@@ -73,7 +89,7 @@ export async function getDashboard(user: AuthUser) {
   const jumlahLaporanSaya =
     await dashboardRepository.countLaporanByWargaId(idWarga);
   const pengumumanTerbaru = await dashboardRepository.countPengumumanByStatus(
-    "Publish",
+    "PUBLISHED",
   );
 
   return {

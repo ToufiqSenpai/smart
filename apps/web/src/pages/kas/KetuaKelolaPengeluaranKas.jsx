@@ -1,14 +1,7 @@
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-
-const pengeluaranData = [
-  { id: 1, kategori: 'Operasional', nominal: 150000, tanggal: '2026-07-14', keterangan: 'Pembelian ATK untuk keperluan administrasi RT', bukti: null },
-  { id: 2, kategori: 'Kegiatan', nominal: 1000000, tanggal: '2026-07-13', keterangan: 'Dana 17-an kegiatan kemerdekaan', bukti: null },
-  { id: 3, kategori: 'Kebersihan', nominal: 250000, tanggal: '2026-07-12', keterangan: 'Pembelian alat kebersihan', bukti: null },
-  { id: 4, kategori: 'Keamanan', nominal: 300000, tanggal: '2026-07-11', keterangan: 'Perbaikan lampu pos ronda', bukti: null },
-  { id: 5, kategori: 'Sosial', nominal: 500000, tanggal: '2026-07-10', keterangan: 'Sumbangan untuk warga kurang mampu', bukti: null },
-  { id: 6, kategori: 'Perbaikan', nominal: 750000, tanggal: '2026-07-09', keterangan: 'Perbaikan jalan lingkungan RT 08', bukti: null }
-]
+import { getExpensesApi } from "../../utils/mockApi"
 
 function formatRupiah(angka) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(angka)
@@ -20,9 +13,24 @@ function formatDate(dateStr) {
   return parseInt(parts[2]) + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0]
 }
 
-const total = pengeluaranData.reduce((sum, i) => sum + i.nominal, 0)
 export default function KetuaKelolaPengeluaranKas() {
   const navigate = useNavigate()
+  const [search, setSearch] = useState('')
+  const [kategoriFilter, setKategoriFilter] = useState('all')
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getExpensesApi().then(setData).finally(() => setLoading(false))
+  }, [])
+
+  const filtered = data.filter((item) => {
+    const matchSearch = item.kategori_pengeluaran.toLowerCase().includes(search.toLowerCase())
+    const matchKategori = kategoriFilter === "all" || item.kategori_pengeluaran === kategoriFilter
+    return matchSearch && matchKategori
+  })
+
+  const total = filtered.reduce((sum, i) => sum + i.nominal_pengeluaran, 0)
 
   return (
     <DashboardLayout>
@@ -36,11 +44,11 @@ export default function KetuaKelolaPengeluaranKas() {
         <div className="flex items-center gap-4 flex-wrap flex-1">
           <div className="flex-1 min-w-[200px] relative">
             <svg className="icon absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" /></svg>
-            <input type="text" id="searchInput" placeholder="Cari kategori..." className="w-full py-2 pl-[38px] pr-3 font-sans text-[13.5px] text-text-primary bg-bg border border-border-subtle rounded-full outline-none h-[38px] transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(30,75,133,0.06)]" />
+            <input type="text" placeholder="Cari kategori..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full py-2 pl-[38px] pr-3 font-sans text-[13.5px] text-text-primary bg-bg border border-border-subtle rounded-full outline-none h-[38px] transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(30,75,133,0.06)]" />
           </div>
           <div className="flex items-center gap-2">
             <label htmlFor="kategoriFilter" className="text-xs font-semibold text-text-muted uppercase tracking-[0.05em]">Kategori</label>
-            <select id="kategoriFilter" className="px-3.5 py-1.5 pl-[14px] pr-[32px] font-sans text-[13px] text-text-primary bg-bg border border-border-subtle rounded-full outline-none h-[38px] appearance-none cursor-pointer transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(30,75,133,0.06)]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2371717A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}>
+            <select id="kategoriFilter" value={kategoriFilter} onChange={(e) => setKategoriFilter(e.target.value)} className="px-3.5 py-1.5 pl-[14px] pr-[32px] font-sans text-[13px] text-text-primary bg-bg border border-border-subtle rounded-full outline-none h-[38px] appearance-none cursor-pointer transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(30,75,133,0.06)]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2371717A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}>
               <option value="all">Semua</option>
               <option value="Operasional">Operasional</option>
               <option value="Kegiatan">Kegiatan</option>
@@ -51,10 +59,9 @@ export default function KetuaKelolaPengeluaranKas() {
               <option value="Lainnya">Lainnya</option>
             </select>
           </div>
-          <span className="text-xs font-semibold text-text-muted bg-bg px-3.5 py-1 rounded-full border border-border-subtle whitespace-nowrap" id="rowCount">{pengeluaranData.length} pengeluaran</span>
+          <span className="text-xs font-semibold text-text-muted bg-bg px-3.5 py-1 rounded-full border border-border-subtle whitespace-nowrap" id="rowCount">{filtered.length} pengeluaran</span>
         </div>
         <button className="inline-flex items-center gap-2 px-5 py-2 font-sans text-[13px] font-semibold bg-primary text-white border-none rounded-full cursor-pointer min-h-[38px] transition-all whitespace-nowrap hover:bg-[#163b6a] hover:shadow-[0_4px_12px_rgba(30,75,133,0.25)] hover:-translate-y-px" id="openModalBtn" onClick={() => navigate('/tambah-pengeluaran-kas')}>
-
           Tambah Pengeluaran
         </button>
       </div>
@@ -77,12 +84,16 @@ export default function KetuaKelolaPengeluaranKas() {
               </tr>
             </thead>
             <tbody id="tableBody">
-              {pengeluaranData.map((item, index) => (
+              {loading ? (
+                <tr><td colSpan="6" className="text-center py-12 text-text-muted text-[13.5px]">Memuat data...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan="6" className="text-center py-12 text-text-muted text-[13.5px]">Tidak ada pengeluaran.</td></tr>
+              ) : filtered.map((item, index) => (
                 <tr key={item.id} className="hover:bg-bg">
                   <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0">{index + 1}</td>
-                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0"><span className="font-semibold text-text-primary">{item.kategori}</span></td>
-                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0"><span className="font-mono text-[12px] text-text-primary">{formatRupiah(item.nominal)}</span></td>
-                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0"><span className="font-mono text-[12px] text-text-primary">{formatDate(item.tanggal)}</span></td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0"><span className="font-semibold text-text-primary">{item.kategori_pengeluaran}</span></td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0"><span className="font-mono text-[12px] text-text-primary">{formatRupiah(item.nominal_pengeluaran)}</span></td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0"><span className="font-mono text-[12px] text-text-primary">{formatDate(item.tanggal_keluar)}</span></td>
                   <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0">{item.keterangan}</td>
                   <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0 text-right">
                     <div className="flex items-center gap-2 justify-end flex-wrap">

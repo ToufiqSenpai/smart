@@ -40,7 +40,7 @@ export async function findAll(keyword?: string, jenisUsaha?: string) {
     jenis_usaha: item.jenisUsaha,
     alamat_usaha: item.alamatUsaha,
     status_verifikasi: item.statusVerifikasi,
-    nama_pemilik: item.warga.masyarakat.nama,
+    pemilik: item.warga.masyarakat.nama,
   }));
 }
 
@@ -59,19 +59,22 @@ export async function findById(id: string) {
     kontak_usaha: item.kontakUsaha,
     foto_usaha: item.fotoUsaha,
     status_verifikasi: item.statusVerifikasi,
-    nama_pemilik: item.warga.masyarakat.nama,
+    pemilik: item.warga.masyarakat.nama,
   };
 }
 
 export async function findByWargaId(wargaId: string) {
   const data = await prisma.umkm.findMany({
     where: { idWarga: wargaId },
+    include: { warga: { include: { masyarakat: { select: { nama: true } } } } },
     orderBy: { idUmkm: 'desc' },
   });
-  return data.map((item: { idUmkm: string; namaUsaha: string; statusVerifikasi: string }) => ({
+  return data.map((item: any) => ({
     id: item.idUmkm,
     nama_usaha: item.namaUsaha,
+    jenis_usaha: item.jenisUsaha,
     status_verifikasi: item.statusVerifikasi,
+    pemilik: item.warga.masyarakat.nama,
   }));
 }
 

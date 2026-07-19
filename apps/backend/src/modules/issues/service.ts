@@ -9,6 +9,9 @@ export async function createIssue(user: AuthUser, data: { kategori_kendala: stri
   if (!data.kategori_kendala || !data.deskripsi) {
     throw { status: 400, message: 'kategori_kendala dan deskripsi wajib diisi', code: 'VALIDATION_ERROR' };
   }
+  if (data.kategori_kendala.length > 15) {
+    throw { status: 400, message: 'kategori_kendala maksimal 15 karakter', code: 'VALIDATION_ERROR' };
+  }
   if (!user.idWarga) {
     throw { status: 400, message: 'Anda belum terdaftar sebagai warga', code: 'NOT_A_RESIDENT' };
   }
@@ -70,7 +73,7 @@ export async function updateIssue(issueId: string, user: AuthUser, data: { kateg
 }
 
 export async function updateIssueStatus(issueId: string, user: AuthUser, status: string) {
-  const validStatuses = ['PENDING', 'IN_PROGRESS', 'COMPLETED'];
+  const validStatuses = ['PENDING', 'VERIFIED', 'IN_PROGRESS', 'COMPLETED', 'REJECTED'];
   if (!validStatuses.includes(status)) {
     throw { status: 400, message: 'Status tidak valid', code: 'VALIDATION_ERROR' };
   }

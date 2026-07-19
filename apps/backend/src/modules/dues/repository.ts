@@ -8,6 +8,7 @@ export async function findAllIuran() {
     select: {
       idIuran: true,
       namaIuran: true,
+      jenisIuran: true,
       nominal: true,
       tanggalJatuhTempo: true,
       statusAktif: true,
@@ -23,6 +24,7 @@ export async function findIuranById(id: string) {
     select: {
       idIuran: true,
       namaIuran: true,
+      jenisIuran: true,
       nominal: true,
       tanggalJatuhTempo: true,
       statusAktif: true,
@@ -33,11 +35,12 @@ export async function findIuranById(id: string) {
 
 export async function createIuran(
   idKetuaRt: string,
-  data: { namaIuran: string; nominal: Decimal; tanggalJatuhTempo: Date },
+  data: { namaIuran: string; jenisIuran: string; nominal: Decimal; tanggalJatuhTempo: Date },
 ) {
   return prisma.iuran.create({
     data: {
       namaIuran: data.namaIuran,
+      jenisIuran: data.jenisIuran,
       nominal: data.nominal,
       tanggalJatuhTempo: data.tanggalJatuhTempo,
       statusAktif: true,
@@ -46,6 +49,7 @@ export async function createIuran(
     select: {
       idIuran: true,
       namaIuran: true,
+      jenisIuran: true,
       nominal: true,
       tanggalJatuhTempo: true,
       statusAktif: true,
@@ -57,6 +61,7 @@ export async function updateIuran(
   id: string,
   data: {
     namaIuran?: string;
+    jenisIuran?: string;
     nominal?: Decimal;
     tanggalJatuhTempo?: Date;
   },
@@ -67,6 +72,7 @@ export async function updateIuran(
     select: {
       idIuran: true,
       namaIuran: true,
+      jenisIuran: true,
       nominal: true,
       tanggalJatuhTempo: true,
       statusAktif: true,
@@ -91,6 +97,7 @@ export async function findIuranAktif() {
     select: {
       idIuran: true,
       namaIuran: true,
+      jenisIuran: true,
       nominal: true,
       tanggalJatuhTempo: true,
       statusAktif: true,
@@ -137,6 +144,7 @@ export async function findAllPayments() {
       iuran: {
         select: {
           namaIuran: true,
+          jenisIuran: true,
         },
       },
     },
@@ -160,6 +168,7 @@ export async function findPaymentById(id: string) {
       iuran: {
         select: {
           namaIuran: true,
+          jenisIuran: true,
         },
       },
     },

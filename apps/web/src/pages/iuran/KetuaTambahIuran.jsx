@@ -38,10 +38,6 @@ export default function KetuaTambahIuran() {
               <option value="Lainnya">Lainnya</option>
             </select>
             <div className="text-xs text-text-muted mt-1">Jenis iuran menentukan kategori tagihan.</div>
-            <div className="text-xs text-error mt-1 hidden items-center gap-1.5" id="jenisIuranError">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-              <span>Jenis iuran harus dipilih</span>
-            </div>
           </div>
 
           <div className="mb-6">

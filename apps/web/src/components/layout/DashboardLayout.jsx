@@ -69,9 +69,9 @@ function NavItem({ item, currentPath }) {
 }
 
 const roleConfig = {
-  warga: { nav: wargaNav, userName: "Ani Wijaya", userRole: "Warga", initials: "AW" },
-  pengurus: { nav: pengurusNav, userName: "Agus Saputra", userRole: "Sekretaris", initials: "AS" },
-  ketua: { nav: ketuaNav, userName: "Budi Santoso", userRole: "Ketua RT", initials: "BS" },
+  RESIDENT: { nav: wargaNav, userName: "Ani Wijaya", userRole: "Warga", initials: "AW" },
+  OFFICER: { nav: pengurusNav, userName: "Agus Saputra", userRole: "Sekretaris", initials: "AS" },
+  CHAIRPERSON: { nav: ketuaNav, userName: "Budi Santoso", userRole: "Ketua RT", initials: "BS" },
 }
 
 export default function DashboardLayout({ children }) {
@@ -79,8 +79,8 @@ export default function DashboardLayout({ children }) {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const role = user?.role || "ketua"
-  const config = roleConfig[role] || roleConfig.ketua
+  const role = user?.role || "CHAIRPERSON"
+  const config = roleConfig[role] || roleConfig.CHAIRPERSON
   const { nav: navItems, userName, userRole, initials: userInitials } = config
 
   return (

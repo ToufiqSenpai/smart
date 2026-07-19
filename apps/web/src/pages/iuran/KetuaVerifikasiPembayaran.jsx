@@ -1,8 +1,67 @@
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import { getPaymentsApi, verifyPaymentApi } from "../../utils/mockApi"
+
+function formatRupiah(angka) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(angka)
+}
+
+function formatDate(dateStr) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des']
+  const parts = dateStr.split('-')
+  return parseInt(parts[2]) + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0]
+}
+
+const badgeClass = {
+  PENDING: "status-badge menunggu",
+  VERIFIED: "status-badge terverifikasi",
+  REJECTED: "status-badge ditolak",
+}
+
+const badgeLabel = {
+  PENDING: "Menunggu",
+  VERIFIED: "Terverifikasi",
+  REJECTED: "Ditolak",
+}
 
 export default function KetuaVerifikasiPembayaran() {
-  var navigate = useNavigate()
+
+  var [search, setSearch] = useState('')
+  var [statusFilter, setStatusFilter] = useState('all')
+  var [data, setData] = useState([])
+  var [loading, setLoading] = useState(true)
+  var [modalPayment, setModalPayment] = useState(null)
+
+  useEffect(() => {
+    getPaymentsApi().then(setData).finally(() => setLoading(false))
+  }, [])
+
+  const filtered = data.filter((p) => {
+    const matchSearch = p.warga.toLowerCase().includes(search.toLowerCase())
+    const filterMap = { menunggu: "PENDING", terverifikasi: "VERIFIED", ditolak: "REJECTED" }
+    const matchStatus = statusFilter === "all" || p.status_verifikasi === (filterMap[statusFilter] || "")
+    return matchSearch && matchStatus
+  })
+
+  const pendingCount = data.filter(p => p.status_verifikasi === "PENDING").length
+
+
+
+
+  function handleApprove(id) {
+    verifyPaymentApi(id, "VERIFIED").then(() => {
+      setData(prev => prev.map(p => p.id === id ? { ...p, status_verifikasi: "VERIFIED" } : p))
+      if (modalPayment?.id === id) setModalPayment(prev => prev ? { ...prev, status_verifikasi: "VERIFIED" } : null)
+    })
+  }
+
+  function handleReject(id) {
+    verifyPaymentApi(id, "REJECTED").then(() => {
+      setData(prev => prev.map(p => p.id === id ? { ...p, status_verifikasi: "REJECTED" } : p))
+      if (modalPayment?.id === id) setModalPayment(prev => prev ? { ...prev, status_verifikasi: "REJECTED" } : null)
+    })
+  }
+
   return (
     <DashboardLayout>
       <style>{`
@@ -88,25 +147,25 @@ export default function KetuaVerifikasiPembayaran() {
         <div className="toolbar-left">
           <div className="search-wrapper">
             <svg className="icon search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" /></svg>
-            <input type="text" id="searchInput" placeholder="Cari nama warga..." />
+            <input type="text" placeholder="Cari nama warga..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="filter-group">
             <label htmlFor="statusFilter">Status</label>
-            <select id="statusFilter">
+            <select id="statusFilter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">Semua</option>
-              <option value="menunggu" selected>Menunggu</option>
+              <option value="menunggu">Menunggu</option>
               <option value="terverifikasi">Terverifikasi</option>
               <option value="ditolak">Ditolak</option>
             </select>
           </div>
-          <span className="badge-count" id="rowCount">2 menunggu</span>
+          <span className="badge-count">{pendingCount} menunggu</span>
         </div>
       </div>
 
       <div className="table-container">
         <div className="table-header">
           <h3>Daftar Pembayaran</h3>
-          <span style={{ fontSize: "12px", color: "var(--ink-subtle)" }}>Total: 5 pembayaran</span>
+          <span style={{ fontSize: "12px", color: "var(--ink-subtle)" }}>Total: {data.length} pembayaran</span>
         </div>
         <div className="table-wrapper">
           <table>
@@ -115,6 +174,7 @@ export default function KetuaVerifikasiPembayaran() {
                 <th>No</th>
                 <th>Warga</th>
                 <th>Iuran</th>
+                <th>Jenis</th>
                 <th>Periode</th>
                 <th>Nominal</th>
                 <th>Tanggal Bayar</th>
@@ -123,148 +183,111 @@ export default function KetuaVerifikasiPembayaran() {
               </tr>
             </thead>
             <tbody id="tableBody">
-              <tr>
-                <td>1</td>
-                <td><span className="name-cell">Budi Santoso</span></td>
-                <td>Iuran RT</td>
-                <td><span className="mono">Juli 2026</span></td>
-                <td><span className="mono">Rp50.000</span></td>
-                <td><span className="mono">14 Jul 2026</span></td>
-                <td><span className="status-badge terverifikasi"><svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 12 2 2 4-4" /></svg> Terverifikasi</span></td>
-                <td style={{ textAlign: "right" }}>
-                  <div className="action-group" style={{ justifyContent: "flex-end" }}>
-                    <button className="btn-sm btn-sm-outline" onClick={() => navigate('/detail-verifikasi/1')}>
-                      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
-                      Detail
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td><span className="name-cell">Ani Wijaya</span></td>
-                <td>Iuran Keamanan</td>
-                <td><span className="mono">Juli 2026</span></td>
-                <td><span className="mono">Rp30.000</span></td>
-                <td><span className="mono">13 Jul 2026</span></td>
-                <td><span className="status-badge menunggu"><svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 14" /></svg> Menunggu</span></td>
-                <td style={{ textAlign: "right" }}>
-                  <div className="action-group" style={{ justifyContent: "flex-end" }}>
-                    <button className="btn-sm btn-sm-outline" onClick={() => navigate('/detail-verifikasi/2')}>
-                      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
-                      Detail
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>3</td>
-                <td><span className="name-cell">Siti Rahayu</span></td>
-                <td>Iuran RT</td>
-                <td><span className="mono">Juli 2026</span></td>
-                <td><span className="mono">Rp50.000</span></td>
-                <td><span className="mono">12 Jul 2026</span></td>
-                <td><span className="status-badge menunggu"><svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 14" /></svg> Menunggu</span></td>
-                <td style={{ textAlign: "right" }}>
-                  <div className="action-group" style={{ justifyContent: "flex-end" }}>
-                    <button className="btn-sm btn-sm-outline" onClick={() => navigate('/detail-verifikasi/3')}>
-                      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
-                      Detail
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>4</td>
-                <td><span className="name-cell">Joko Prasetyo</span></td>
-                <td>Iuran Sosial</td>
-                <td><span className="mono">Juni 2026</span></td>
-                <td><span className="mono">Rp20.000</span></td>
-                <td><span className="mono">28 Jun 2026</span></td>
-                <td><span className="status-badge ditolak"><svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" /></svg> Ditolak</span></td>
-                <td style={{ textAlign: "right" }}>
-                  <div className="action-group" style={{ justifyContent: "flex-end" }}>
-                    <button className="btn-sm btn-sm-outline" onClick={() => navigate('/detail-verifikasi/4')}>
-                      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
-                      Detail
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>5</td>
-                <td><span className="name-cell">Eko Prabowo</span></td>
-                <td>Iuran Keamanan</td>
-                <td><span className="mono">Juli 2026</span></td>
-                <td><span className="mono">Rp30.000</span></td>
-                <td><span className="mono">11 Jul 2026</span></td>
-                <td><span className="status-badge terverifikasi"><svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 12 2 2 4-4" /></svg> Terverifikasi</span></td>
-                <td style={{ textAlign: "right" }}>
-                  <div className="action-group" style={{ justifyContent: "flex-end" }}>
-                    <button className="btn-sm btn-sm-outline" onClick={() => navigate('/detail-verifikasi/5')}>
-                      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
-                      Detail
-                    </button>
-                  </div>
-                </td>
-              </tr>
+              {loading ? (
+                <tr><td colSpan="9" style={{ textAlign: "center", padding: "48px 24px", color: "var(--ink-muted)" }}>Memuat data...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan="9" style={{ textAlign: "center", padding: "48px 24px", color: "var(--ink-muted)" }}>Tidak ada pembayaran.</td></tr>
+              ) : filtered.map((p, i) => {
+                const statusBadge = badgeClass[p.status_verifikasi] || 'status-badge menunggu'
+                const statusLabel = badgeLabel[p.status_verifikasi] || 'Menunggu'
+                return (
+                  <tr key={p.id}>
+                    <td>{i + 1}</td>
+                    <td><span className="name-cell">{p.warga}</span></td>
+                    <td>{p.iuran}</td>
+                    <td>{p.jenis_iuran}</td>
+                    <td><span className="mono">{p.periode}</span></td>
+                    <td><span className="mono">{formatRupiah(p.nominal)}</span></td>
+                    <td><span className="mono">{formatDate(p.tanggal_bayar)}</span></td>
+                    <td><span className={statusBadge}>
+                      <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        {p.status_verifikasi === "VERIFIED" ? <path d="m9 12 2 2 4-4" /> : p.status_verifikasi === "REJECTED" ? <><line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" /></> : <><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 14" /></>}
+                      </svg> {statusLabel}
+                    </span></td>
+                    <td style={{ textAlign: "right" }}>
+                      <div className="action-group" style={{ justifyContent: "flex-end" }}>
+                        <button className="btn-sm btn-sm-outline" onClick={() => setModalPayment(p)}>
+                          <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
+                          Detail
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
-      <div className="modal-overlay" id="detailModal">
+      <div className={"modal-overlay" + (modalPayment ? " active" : "")}>
         <div className="modal">
           <div className="modal-header">
             <h3>Detail Pembayaran</h3>
-            <button className="modal-close" id="modalClose" aria-label="Tutup">
+            <button className="modal-close" onClick={() => setModalPayment(null)} aria-label="Tutup">
               <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" /></svg>
             </button>
           </div>
-          <div className="modal-body" id="modalBody">
-            <div className="detail-row">
-              <span className="label">Nama Warga</span>
-              <span className="value" id="modalWarga">-</span>
-            </div>
-            <div className="detail-row">
-              <span className="label">Iuran</span>
-              <span className="value" id="modalIuran">-</span>
-            </div>
-            <div className="detail-row">
-              <span className="label">Periode</span>
-              <span className="value mono" id="modalPeriode">-</span>
-            </div>
-            <div className="detail-row">
-              <span className="label">Nominal</span>
-              <span className="value mono" id="modalNominal">-</span>
-            </div>
-            <div className="detail-row">
-              <span className="label">Metode Bayar</span>
-              <span className="value" id="modalMetode">-</span>
-            </div>
-            <div className="detail-row">
-              <span className="label">Tanggal Bayar</span>
-              <span className="value mono" id="modalTanggal">-</span>
-            </div>
-            <div className="detail-row">
-              <span className="label">Status</span>
-              <span className="value" id="modalStatus">-</span>
-            </div>
-            <div className="bukti-section">
-              <span className="bukti-label">Bukti Pembayaran</span>
-              <div className="bukti-image" id="modalBukti">
-                <div className="no-bukti">
-                  <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
-                  <span>Tidak ada bukti pembayaran</span>
+          {modalPayment && (
+            <>
+              <div className="modal-body">
+                <div className="detail-row">
+                  <span className="label">Nama Warga</span>
+                  <span className="value">{modalPayment.warga}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Iuran</span>
+                  <span className="value">{modalPayment.iuran}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Jenis</span>
+                  <span className="value">{modalPayment.jenis_iuran}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Periode</span>
+                  <span className="value mono">{modalPayment.periode}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Nominal</span>
+                  <span className="value mono">{formatRupiah(modalPayment.nominal)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Metode Bayar</span>
+                  <span className="value">{modalPayment.metode_bayar}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Tanggal Bayar</span>
+                  <span className="value mono">{formatDate(modalPayment.tanggal_bayar)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="label">Status</span>
+                  <span className="value"><span className={"status-badge " + (badgeClass[modalPayment.status_verifikasi] || 'menunggu')}>{badgeLabel[modalPayment.status_verifikasi] || 'Menunggu'}</span></span>
+                </div>
+                <div className="bukti-section">
+                  <span className="bukti-label">Bukti Pembayaran</span>
+                  <div className="bukti-image">
+                    {modalPayment.bukti_pembayaran ? (
+                      <img src={modalPayment.bukti_pembayaran} alt="Bukti pembayaran" />
+                    ) : (
+                      <div className="no-bukti">
+                        <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+                        <span>Tidak ada bukti pembayaran</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <div className="modal-footer" id="modalFooter">
-            <button className="btn btn-secondary" id="modalCloseBtn">Tutup</button>
-            <button className="btn btn-danger" id="modalRejectBtn" style={{ display: "none" }}>Tolak</button>
-            <button className="btn btn-success" id="modalApproveBtn" style={{ display: "none" }}>Verifikasi</button>
-          </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setModalPayment(null)}>Tutup</button>
+                {modalPayment.status_verifikasi === "PENDING" && (
+                  <>
+                    <button className="btn btn-danger" onClick={() => handleReject(modalPayment.id)}>Tolak</button>
+                    <button className="btn btn-success" onClick={() => handleApprove(modalPayment.id)}>Verifikasi</button>
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </DashboardLayout>

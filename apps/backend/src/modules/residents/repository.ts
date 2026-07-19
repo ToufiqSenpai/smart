@@ -42,6 +42,8 @@ export async function findAllWarga(search?: string, status?: string) {
     id: w.idWarga,
     nik: w.masyarakat.nik,
     nama: w.masyarakat.nama,
+    alamat: w.masyarakat.alamat,
+    no_hp: w.masyarakat.noHp,
     statusKeanggotaan: w.statusKeanggotaan,
   }));
 }
@@ -91,8 +93,10 @@ export async function findPendingVerifications() {
   });
   return data.map((w: any) => ({
     id: w.idWarga,
+    nik: w.masyarakat.nik,
     nama: w.masyarakat.nama,
-    tanggalRegistrasi: w.idWarga,
+    alamat: w.masyarakat.alamat,
+    no_hp: w.masyarakat.noHp,
   }));
 }
 
@@ -110,7 +114,9 @@ export async function findAllOfficers() {
   return data.map((p: any) => ({
     id: p.idPengurus,
     nama: p.masyarakat.nama,
+    nik: p.masyarakat.nik,
     jabatan: p.jabatan,
+    periodeJabatan: p.periodeJabatan,
   }));
 }
 

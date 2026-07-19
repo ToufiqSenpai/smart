@@ -57,7 +57,7 @@ export async function countUnpaidBills(idWarga: string) {
       idWarga: wargaId,
       idIuran: { in: activeIuran.map((i) => i.idIuran) },
       periode: currentMonth,
-      statusVerifikasi: "Terverifikasi",
+      statusVerifikasi: "VERIFIED",
     },
   });
 
@@ -69,4 +69,16 @@ export async function sumPengeluaranKas() {
     _sum: { nominalPengeluaran: true },
   });
   return result._sum.nominalPengeluaran ? Number(result._sum.nominalPengeluaran) : 0;
+}
+
+export async function countUmkmPending() {
+  return prisma.umkm.count({ where: { statusVerifikasi: "PENDING" } });
+}
+
+export async function countPaymentsPending() {
+  return prisma.pembayaranIuran.count({ where: { statusVerifikasi: "PENDING" } });
+}
+
+export async function countIssuesByStatus(status: string) {
+  return prisma.laporanKendala.count({ where: { statusLaporan: status } });
 }

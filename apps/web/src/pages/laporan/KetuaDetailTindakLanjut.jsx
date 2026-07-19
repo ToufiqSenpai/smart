@@ -24,8 +24,6 @@ export default function KetuaDetailTindakLanjut() {
             </span>
             <h2 className="font-grotesk text-2xl font-bold text-text-primary tracking-tight" id="judul">Laporan Kendala</h2>
             <div className="flex flex-wrap gap-2 gap-x-6 mt-2 text-[13px] text-text-secondary">
-              <span>No. Laporan: <span className="font-mono text-xs" id="noLaporan">007/KEND/RT08/VII/2026</span></span>
-              <span>•</span>
               <span>Tanggal: <span className="font-mono text-xs" id="tanggalLapor">14 Juli 2026</span></span>
               <span>•</span>
               <span>Oleh: <span id="namaPelapor">Budi Santoso</span></span>

@@ -7,25 +7,16 @@ const ICONS = {
   laporan: <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="15" x2="12" y2="15.01" /></svg>,
   kas: <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>,
   keuangan: <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" /></svg>,
-  chevronDown: <svg className="icon dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>,
-  logout: <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>,
 }
 
 export const wargaNav = [
   { type: "link", label: "Dashboard", icon: ICONS.dashboard, path: "/dashboard" },
   { type: "link", label: "Pengumuman", icon: ICONS.pengumuman, path: "/pengumuman" },
-  {
-    type: "dropdown", label: "Laporan Kendala", icon: ICONS.laporan,
-    children: [
-      { label: "Buat Laporan", path: "/buat-laporan" },
-      { label: "Monitoring Laporan", path: "/monitoring-laporan" },
-    ],
-  },
+  { type: "link", label: "Monitoring Laporan", icon: ICONS.laporan, path: "/monitoring-laporan" },
   {
     type: "dropdown", label: "UMKM", icon: ICONS.umkm,
     children: [
       { label: "UMKM Saya", path: "/umkm-saya" },
-      { label: "Tambah UMKM", path: "/tambah-umkm" },
       { label: "Lihat UMKM", path: "/lihat-umkm" },
     ],
   },
@@ -34,48 +25,32 @@ export const wargaNav = [
 
 export const pengurusNav = [
   { type: "link", label: "Dashboard", icon: ICONS.dashboard, path: "/dashboard" },
-  {
-    type: "dropdown", label: "Warga", icon: ICONS.warga,
-    children: [
-      { label: "Data Warga", path: "/data-warga" },
-    ],
-  },
+  { type: "link", label: "Data Warga", icon: ICONS.warga, path: "/data-warga" },
   {
     type: "dropdown", label: "UMKM", icon: ICONS.umkm,
     children: [
+      { label: "UMKM Saya", path: "/umkm-saya" },
       { label: "Validasi UMKM", path: "/validasi-umkm" },
       { label: "Lihat UMKM", path: "/lihat-umkm" },
-      { label: "Tambah UMKM", path: "/tambah-umkm" },
     ],
   },
   {
     type: "dropdown", label: "Iuran", icon: ICONS.iuran,
     children: [
+      { label: "Pembayaran Iuran", path: "/pembayaran-iuran" },
       { label: "Verifikasi Pembayaran", path: "/verifikasi-pembayaran" },
     ],
   },
-  {
-    type: "dropdown", label: "Pengumuman", icon: ICONS.pengumuman,
-    children: [
-      { label: "Kelola Pengumuman", path: "/kelola-pengumuman" },
-      { label: "Lihat Pengumuman", path: "/pengumuman" },
-    ],
-  },
+  { type: "link", label: "Pengumuman", icon: ICONS.pengumuman, path: "/kelola-pengumuman" },
   {
     type: "dropdown", label: "Laporan Kendala", icon: ICONS.laporan,
     children: [
+      { label: "Monitoring", path: "/monitoring-laporan" },
       { label: "Validasi Laporan", path: "/validasi-laporan" },
       { label: "Tindak Lanjut", path: "/tindak-lanjut-laporan" },
-      { label: "Monitoring", path: "/monitoring-laporan" },
     ],
   },
-  {
-    type: "dropdown", label: "Pengeluaran Kas", icon: ICONS.kas,
-    children: [
-      { label: "Kelola Pengeluaran", path: "/kelola-pengeluaran-kas" },
-      { label: "Tambah Pengeluaran", path: "/tambah-pengeluaran-kas" },
-    ],
-  },
+  { type: "link", label: "Pengeluaran Kas", icon: ICONS.kas, path: "/kelola-pengeluaran-kas" },
   { type: "link", label: "Laporan Keuangan", icon: ICONS.keuangan, path: "/laporan-keuangan" },
 ]
 
@@ -85,47 +60,35 @@ export const ketuaNav = [
     type: "dropdown", label: "Warga", icon: ICONS.warga,
     children: [
       { label: "Verifikasi Warga", path: "/verifikasi-warga" },
-      { label: "Kelola Pengurus RT", path: "/kelola-pengurus" },
       { label: "Data Warga", path: "/data-warga" },
+      { label: "Kelola Pengurus RT", path: "/kelola-pengurus" },
     ],
   },
   {
     type: "dropdown", label: "UMKM", icon: ICONS.umkm,
     children: [
+      { label: "UMKM Saya", path: "/umkm-saya" },
       { label: "Validasi UMKM", path: "/validasi-umkm" },
       { label: "Lihat UMKM", path: "/lihat-umkm" },
-      { label: "Tambah UMKM", path: "/tambah-umkm" },
     ],
   },
   {
     type: "dropdown", label: "Iuran", icon: ICONS.iuran,
     children: [
+      { label: "Pembayaran Iuran", path: "/pembayaran-iuran" },
       { label: "Kelola Iuran", path: "/kelola-iuran" },
-      { label: "Tambah Iuran", path: "/tambah-iuran" },
       { label: "Verifikasi Pembayaran", path: "/verifikasi-pembayaran" },
     ],
   },
-  {
-    type: "dropdown", label: "Pengumuman", icon: ICONS.pengumuman,
-    children: [
-      { label: "Kelola Pengumuman", path: "/kelola-pengumuman" },
-      { label: "Lihat Pengumuman", path: "/pengumuman" },
-    ],
-  },
+  { type: "link", label: "Pengumuman", icon: ICONS.pengumuman, path: "/kelola-pengumuman" },
   {
     type: "dropdown", label: "Laporan Kendala", icon: ICONS.laporan,
     children: [
+      { label: "Monitoring", path: "/monitoring-laporan" },
       { label: "Validasi Laporan", path: "/validasi-laporan" },
       { label: "Tindak Lanjut", path: "/tindak-lanjut-laporan" },
-      { label: "Monitoring", path: "/monitoring-laporan" },
     ],
   },
-  {
-    type: "dropdown", label: "Pengeluaran Kas", icon: ICONS.kas,
-    children: [
-      { label: "Kelola Pengeluaran", path: "/kelola-pengeluaran-kas" },
-      { label: "Tambah Pengeluaran", path: "/tambah-pengeluaran-kas" },
-    ],
-  },
+  { type: "link", label: "Pengeluaran Kas", icon: ICONS.kas, path: "/kelola-pengeluaran-kas" },
   { type: "link", label: "Laporan Keuangan", icon: ICONS.keuangan, path: "/laporan-keuangan" },
 ]

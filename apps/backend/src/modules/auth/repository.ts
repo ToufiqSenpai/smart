@@ -10,3 +10,13 @@ export async function findByEmail(email: string) {
   });
 }
 
+export async function findByUsername(username: string) {
+  return prisma.masyarakat.findFirst({
+    where: { username },
+    include: {
+      warga: true,
+      pengurusRt: true,
+    },
+  });
+}
+

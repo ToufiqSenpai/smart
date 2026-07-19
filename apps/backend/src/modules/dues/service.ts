@@ -9,6 +9,7 @@ export async function listIuran() {
   return data.map((i) => ({
     id: i.idIuran,
     nama_iuran: i.namaIuran,
+    jenis_iuran: i.jenisIuran,
     nominal: Number(i.nominal),
     tanggal_jatuh_tempo: i.tanggalJatuhTempo.toISOString().split("T")[0],
     status_aktif: i.statusAktif,
@@ -36,6 +37,7 @@ export async function getIuranById(id: string) {
   return {
     id: iuran.idIuran,
     nama_iuran: iuran.namaIuran,
+    jenis_iuran: iuran.jenisIuran,
     nominal: Number(iuran.nominal),
     tanggal_jatuh_tempo: iuran.tanggalJatuhTempo.toISOString().split("T")[0],
     status_aktif: iuran.statusAktif,
@@ -47,6 +49,7 @@ export async function addIuran(
   user: AuthUser,
   payload: {
     nama_iuran: string;
+    jenis_iuran: string;
     nominal: number;
     tanggal_jatuh_tempo: string;
   },
@@ -60,13 +63,19 @@ export async function addIuran(
     };
   }
 
-  const { nama_iuran, nominal, tanggal_jatuh_tempo } = payload;
+  const { nama_iuran, jenis_iuran, nominal, tanggal_jatuh_tempo } = payload;
   const errors: string[] = [];
 
   if (!nama_iuran || !nama_iuran.trim()) {
     errors.push("nama_iuran is required");
   } else if (nama_iuran.trim().length > 40) {
     errors.push("nama_iuran must be at most 40 characters");
+  }
+
+  if (!jenis_iuran || !jenis_iuran.trim()) {
+    errors.push("jenis_iuran is required");
+  } else if (jenis_iuran.trim().length > 15) {
+    errors.push("jenis_iuran must be at most 15 characters");
   }
 
   if (
@@ -100,6 +109,7 @@ export async function addIuran(
 
   const result = await duesRepository.createIuran(user.idPengurus, {
     namaIuran: nama_iuran.trim(),
+    jenisIuran: jenis_iuran.trim(),
     nominal: new Decimal(nominal),
     tanggalJatuhTempo: new Date(tanggal_jatuh_tempo),
   });
@@ -109,6 +119,7 @@ export async function addIuran(
     data: {
       id: result.idIuran,
       nama_iuran: result.namaIuran,
+      jenis_iuran: result.jenisIuran,
       nominal: Number(result.nominal),
       tanggal_jatuh_tempo: result.tanggalJatuhTempo.toISOString().split("T")[0],
       status_aktif: result.statusAktif,
@@ -121,6 +132,7 @@ export async function editIuran(
   id: string,
   payload: {
     nama_iuran?: string;
+    jenis_iuran?: string;
     nominal?: number;
     tanggal_jatuh_tempo?: string;
   },
@@ -170,6 +182,7 @@ export async function editIuran(
 
   const data: {
     namaIuran?: string;
+    jenisIuran?: string;
     nominal?: Decimal;
     tanggalJatuhTempo?: Date;
   } = {};
@@ -182,6 +195,16 @@ export async function editIuran(
       errors.push("nama_iuran must be at most 40 characters");
     } else {
       data.namaIuran = payload.nama_iuran.trim();
+    }
+  }
+
+  if (payload.jenis_iuran !== undefined) {
+    if (!payload.jenis_iuran.trim()) {
+      errors.push("jenis_iuran cannot be empty");
+    } else if (payload.jenis_iuran.trim().length > 15) {
+      errors.push("jenis_iuran must be at most 15 characters");
+    } else {
+      data.jenisIuran = payload.jenis_iuran.trim();
     }
   }
 
@@ -222,6 +245,7 @@ export async function editIuran(
     data: {
       id: result.idIuran,
       nama_iuran: result.namaIuran,
+      jenis_iuran: result.jenisIuran,
       nominal: Number(result.nominal),
       tanggal_jatuh_tempo: result.tanggalJatuhTempo.toISOString().split("T")[0],
       status_aktif: result.statusAktif,
@@ -307,11 +331,12 @@ export async function getBills(user: AuthUser) {
   const statusMap = new Map<string, string>();
   for (const p of payments) {
     const key = `${p.idIuran}-${p.periode}`;
-    if (p.statusVerifikasi === "Terverifikasi") {
+    const s = p.statusVerifikasi;
+    if (s === "VERIFIED" || s === "Terverifikasi") {
       statusMap.set(key, "VERIFIED");
-    } else if (p.statusVerifikasi === "Menunggu") {
+    } else if (s === "PENDING" || s === "Menunggu") {
       if (!statusMap.has(key)) statusMap.set(key, "PENDING");
-    } else if (p.statusVerifikasi === "Ditolak") {
+    } else if (s === "REJECTED" || s === "Ditolak") {
       statusMap.set(key, "REJECTED");
     }
   }
@@ -322,8 +347,10 @@ export async function getBills(user: AuthUser) {
   const bills: Array<{
     id_iuran: string;
     nama_iuran: string;
+    jenis_iuran: string;
     periode: string;
     nominal: number;
+    tanggal_jatuh_tempo: string;
     status: string;
   }> = [];
 
@@ -335,8 +362,10 @@ export async function getBills(user: AuthUser) {
       bills.push({
         id_iuran: iuran.idIuran,
         nama_iuran: iuran.namaIuran,
+        jenis_iuran: iuran.jenisIuran,
         periode,
         nominal: Number(iuran.nominal),
+        tanggal_jatuh_tempo: iuran.tanggalJatuhTempo.toISOString().split("T")[0],
         status,
       });
     }
@@ -452,7 +481,7 @@ export async function addPayment(
     metodeBayar: metode_bayar.trim(),
     jumlahBayar: new Decimal(jumlah_bayar),
     buktiPembayaran: bukti_pembayaran.trim(),
-    statusVerifikasi: "Menunggu",
+    statusVerifikasi: "PENDING",
   });
 
   return {
@@ -484,9 +513,11 @@ export async function listPayments(user: AuthUser) {
     id_pembayaran: p.idPembayaran,
     nama_warga: p.warga.masyarakat.nama,
     nama_iuran: p.iuran.namaIuran,
+    jenis_iuran: p.iuran.jenisIuran,
     periode: p.periode,
     jumlah_bayar: Number(p.jumlahBayar),
     tanggal_bayar: p.tanggalBayar.toISOString().split("T")[0],
+    metode_bayar: p.metodeBayar,
     status_verifikasi: p.statusVerifikasi,
   }));
 }
@@ -523,6 +554,7 @@ export async function getPaymentById(id: string, user: AuthUser) {
     id_pembayaran: payment.idPembayaran,
     nama_warga: payment.warga.masyarakat.nama,
     nama_iuran: payment.iuran.namaIuran,
+    jenis_iuran: payment.iuran.jenisIuran,
     periode: payment.periode,
     tanggal_bayar: payment.tanggalBayar.toISOString().split("T")[0],
     metode_bayar: payment.metodeBayar,
@@ -574,8 +606,7 @@ export async function verifyPayment(
     };
   }
 
-  const mappedStatus = status === "VERIFIED" ? "Terverifikasi" : "Ditolak";
-  const result = await duesRepository.updatePaymentStatus(id, mappedStatus);
+  const result = await duesRepository.updatePaymentStatus(id, status);
 
   return {
     message: "Status pembayaran berhasil diperbarui.",

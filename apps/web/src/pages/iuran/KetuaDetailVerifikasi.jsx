@@ -1,19 +1,31 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useParams } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import { getPaymentByIdApi, verifyPaymentApi } from "../../utils/mockApi"
 
 export default function KetuaDetailVerifikasi() {
-  const [paymentData, setPaymentData] = useState({
-    id: 2,
-    warga: 'Ani Wijaya',
-    iuran: 'Iuran Keamanan',
-    periode: 'Juli 2026',
-    nominal: 30000,
-    metode: 'Tunai',
-    tanggal: '2026-07-13',
-    status: 'menunggu',
-    bukti: null,
-    noTransaksi: 'TRX/RT08/VII/2026/002'
-  })
+  const { id } = useParams()
+  const [paymentData, setPaymentData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!id) return
+    getPaymentByIdApi(id).then((data) => {
+      // map mockApi fields to what the component expects
+      setPaymentData({
+        id: data.id,
+        warga: data.warga,
+        iuran: data.iuran,
+        jenis: data.jenis_iuran,
+        periode: data.periode,
+        nominal: data.nominal,
+        metode: data.metode_bayar,
+        tanggal: data.tanggal_bayar,
+        status: data.status_verifikasi === "VERIFIED" ? "terverifikasi" : data.status_verifikasi === "REJECTED" ? "ditolak" : "menunggu",
+        bukti: data.bukti_pembayaran,
+      })
+    }).finally(() => setLoading(false))
+  }, [id])
 
   function formatRupiah(angka) {
     return new Intl.NumberFormat('id-ID', {
@@ -36,8 +48,6 @@ export default function KetuaDetailVerifikasi() {
     ditolak: { badgeClass: 'ditolak', label: 'Ditolak', info: 'Pembayaran ditolak' }
   }
 
-  var currentStatus = statusInfo[paymentData.status] || statusInfo.menunggu
-
   function getStatusClass(s) {
     var base = "inline-flex items-center gap-1.5 px-[14px] py-1 rounded-full text-[11px] font-bold border"
     var map = { menunggu: "bg-warning-bg text-warning border-warning/10", terverifikasi: "bg-success-bg text-success border-success/10", ditolak: "bg-error-bg text-error border-error/10" }
@@ -45,12 +55,28 @@ export default function KetuaDetailVerifikasi() {
   }
 
   function handleVerifikasi() {
-    setPaymentData(prev => ({ ...prev, status: 'terverifikasi' }))
+    if (!paymentData) return
+    verifyPaymentApi(paymentData.id, "VERIFIED").then(() => {
+      setPaymentData(prev => ({ ...prev, status: 'terverifikasi' }))
+    })
   }
 
   function handleTolak() {
-    setPaymentData(prev => ({ ...prev, status: 'ditolak' }))
+    if (!paymentData) return
+    verifyPaymentApi(paymentData.id, "REJECTED").then(() => {
+      setPaymentData(prev => ({ ...prev, status: 'ditolak' }))
+    })
   }
+
+  if (loading || !paymentData) {
+    return (
+      <DashboardLayout>
+        <div className="text-center py-16 text-text-muted">Memuat data...</div>
+      </DashboardLayout>
+    )
+  }
+
+  var currentStatus = statusInfo[paymentData.status] || statusInfo.menunggu
 
   return (
     <DashboardLayout>
@@ -68,8 +94,6 @@ export default function KetuaDetailVerifikasi() {
             </span>
             <h2 className="font-grotesk text-2xl font-bold text-text-primary tracking-tight">Pembayaran {paymentData.iuran}</h2>
             <div className="flex flex-wrap gap-2 gap-x-6 mt-2 text-[13px] text-text-secondary">
-              <span>No. Transaksi: <span className="font-mono text-xs">{paymentData.noTransaksi}</span></span>
-              <span>•</span>
               <span>Dibayar: <span className="font-mono text-xs">{formatDate(paymentData.tanggal)}</span></span>
               <span>•</span>
               <span>Oleh: <span>{paymentData.warga}</span></span>
@@ -111,10 +135,14 @@ export default function KetuaDetailVerifikasi() {
           <div className="mb-8">
             <span className="text-[13px] font-semibold text-text-primary mb-3 block">📎 Bukti Pembayaran</span>
             <div className="rounded-[14px] overflow-hidden border border-border-subtle bg-bg w-full max-h-[500px] flex items-center justify-center">
-              <div className="py-12 px-6 text-center text-text-muted text-sm flex flex-col items-center gap-3">
-                <svg className="w-12 h-12 text-border-subtle" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
-                <span>Tidak ada bukti pembayaran</span>
-              </div>
+              {paymentData.bukti ? (
+                <img src={paymentData.bukti} alt="Bukti pembayaran" className="w-full h-auto object-contain" />
+              ) : (
+                <div className="py-12 px-6 text-center text-text-muted text-sm flex flex-col items-center gap-3">
+                  <svg className="w-12 h-12 text-border-subtle" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+                  <span>Tidak ada bukti pembayaran</span>
+                </div>
+              )}
             </div>
           </div>
 

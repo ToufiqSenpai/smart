@@ -1,13 +1,7 @@
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-
-const laporanData = [
-  { id: 1, kategori: 'Lampu Jalan Mati', pelapor: 'Budi Santoso', deskripsi: 'Lampu jalan di depan rumah nomor 12 mati sejak 3 hari lalu. Sangat gelap dan berbahaya.', tanggal: '2026-07-14', status: 'diverifikasi', tanggapan: null },
-  { id: 2, kategori: 'Saluran Air Tersumbat', pelapor: 'Ani Wijaya', deskripsi: 'Saluran air di Jl. Mawar tersumbat sampah. Air meluap ke jalan saat hujan.', tanggal: '2026-07-12', status: 'diverifikasi', tanggapan: null },
-  { id: 3, kategori: 'Sampah Menumpuk', pelapor: 'Siti Rahayu', deskripsi: 'Sampah di TPS RT 08 sudah menumpuk dan belum diangkut selama 2 hari.', tanggal: '2026-07-10', status: 'proses', tanggapan: 'Sedang dalam penanganan petugas kebersihan.' },
-  { id: 4, kategori: 'Keamanan', pelapor: 'Joko Prasetyo', deskripsi: 'Terlihat orang mencurigakan di sekitar kompleks malam hari.', tanggal: '2026-07-08', status: 'selesai', tanggapan: 'Sudah dilakukan pengecekan dan patroli rutin.' },
-  { id: 5, kategori: 'Jalan Rusak', pelapor: 'Eko Prabowo', deskripsi: 'Jalan di depan masjid berlubang dan membahayakan pengendara.', tanggal: '2026-07-05', status: 'selesai', tanggapan: 'Jalan sudah diperbaiki oleh petugas.' }
-]
+import { getIssuesApi } from "../../utils/mockApi"
 
 function formatDate(dateStr) {
   const parts = dateStr.split('-')
@@ -17,18 +11,39 @@ function formatDate(dateStr) {
 
 function getStatusInfo(status) {
   const map = {
-    'menunggu': { class: 'menunggu', label: 'Menunggu', icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>' },
-    'diverifikasi': { class: 'diverifikasi', label: 'Diverifikasi', icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/></svg>' },
-    'proses': { class: 'proses', label: 'Dalam Proses', icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l3 2"/></svg>' },
-    'selesai': { class: 'selesai', label: 'Selesai', icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/></svg>' },
-    'ditolak': { class: 'ditolak', label: 'Ditolak', icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>' }
+    PENDING: { class: 'menunggu', label: 'Menunggu', icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>' },
+    VERIFIED: { class: 'diverifikasi', label: 'Diverifikasi', icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/></svg>' },
+    IN_PROGRESS: { class: 'proses', label: 'Dalam Proses', icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l3 2"/></svg>' },
+    COMPLETED: { class: 'selesai', label: 'Selesai', icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 12 2 2 4-4"/></svg>' },
+    REJECTED: { class: 'ditolak', label: 'Ditolak', icon: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>' }
   }
-  return map[status] || map['menunggu']
+  return map[status] || map.PENDING
 }
 
-const pendingCount = laporanData.filter(i => i.status === 'diverifikasi').length
 export default function KetuaTindakLanjutLaporan() {
   const navigate = useNavigate()
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getIssuesApi().then(setData).finally(() => setLoading(false))
+  }, [])
+
+  const statusReverseMap = {
+    diverifikasi: "VERIFIED",
+    proses: "IN_PROGRESS",
+    selesai: "COMPLETED",
+  }
+
+  const filtered = data.filter((item) => {
+    const matchSearch = item.kategori_kendala.toLowerCase().includes(search.toLowerCase()) || item.pelapor.toLowerCase().includes(search.toLowerCase())
+    const matchStatus = statusFilter === "all" || item.status_laporan === (statusReverseMap[statusFilter] || statusFilter.toUpperCase())
+    return matchSearch && matchStatus
+  })
+
+  const pendingCount = data.filter(i => i.status_laporan === "VERIFIED").length
 
   return (
     <DashboardLayout>
@@ -101,25 +116,25 @@ export default function KetuaTindakLanjutLaporan() {
         <div className="toolbar-left">
           <div className="search-wrapper">
             <svg className="icon search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" /></svg>
-            <input type="text" id="searchInput" placeholder="Cari kategori atau pelapor..." />
+            <input type="text" placeholder="Cari kategori atau pelapor..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="filter-group">
             <label htmlFor="statusFilter">Status</label>
-            <select id="statusFilter">
+            <select id="statusFilter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">Semua</option>
               <option value="diverifikasi">Diverifikasi</option>
               <option value="proses">Dalam Proses</option>
               <option value="selesai">Selesai</option>
             </select>
           </div>
-          <span className="badge-count" id="rowCount">{pendingCount} menunggu tindak lanjut</span>
+          <span className="badge-count">{pendingCount} menunggu tindak lanjut</span>
         </div>
       </div>
 
       <div className="table-container">
         <div className="table-header">
           <h3>Daftar Laporan</h3>
-          <span style={{ fontSize: "12px", color: "var(--ink-subtle)" }}>Total: {laporanData.length} laporan</span>
+          <span style={{ fontSize: "12px", color: "var(--ink-subtle)" }}>Total: {data.length} laporan</span>
         </div>
         <div className="table-wrapper">
           <table>
@@ -134,21 +149,25 @@ export default function KetuaTindakLanjutLaporan() {
               </tr>
             </thead>
             <tbody id="tableBody">
-              {laporanData.map((item, index) => {
-                const status = getStatusInfo(item.status)
+              {loading ? (
+                <tr><td colSpan="6" style={{ textAlign: "center", padding: "48px 24px", color: "var(--ink-muted)" }}>Memuat data...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan="6" style={{ textAlign: "center", padding: "48px 24px", color: "var(--ink-muted)" }}>Tidak ada laporan.</td></tr>
+              ) : filtered.map((item, index) => {
+                const status = getStatusInfo(item.status_laporan)
                 const tanggapanPreview = item.tanggapan
                   ? <span style={{ fontSize: "11px", color: "var(--ink-subtle)", display: "block", marginTop: "2px" }}>💬 {item.tanggapan.substring(0, 40)}{item.tanggapan.length > 40 ? '...' : ''}</span>
                   : null
                 return (
                   <tr key={item.id}>
                     <td>{index + 1}</td>
-                    <td><span className="name-cell">{item.kategori}</span>{tanggapanPreview}</td>
+                    <td><span className="name-cell">{item.kategori_kendala}</span>{tanggapanPreview}</td>
                     <td>{item.pelapor}</td>
-                    <td><span className="mono">{formatDate(item.tanggal)}</span></td>
+                    <td><span className="mono">{formatDate(item.tanggal_lapor)}</span></td>
                     <td><span className={"status-badge " + status.class} dangerouslySetInnerHTML={{ __html: status.icon + ' ' + status.label }} /></td>
                     <td style={{ textAlign: "right" }}>
                       <div className="action-group" style={{ justifyContent: "flex-end" }}>
-                        {item.status === 'diverifikasi' ? (
+                        {item.status_laporan === 'VERIFIED' ? (
                           <button className="btn-sm btn-sm-success" onClick={() => navigate('/detail-tindak-lanjut/' + item.id)}>
                             <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
                             Tindak Lanjut

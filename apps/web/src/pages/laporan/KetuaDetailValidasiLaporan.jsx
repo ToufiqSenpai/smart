@@ -10,7 +10,6 @@ const laporanData = {
   tanggal: "2026-07-14",
   status: "menunggu",
   foto: null,
-  noLaporan: "007/KEND/RT08/VII/2026",
 }
 
 function formatDate(dateStr) {
@@ -103,8 +102,6 @@ export default function KetuaDetailValidasiLaporan() {
             </span>
             <h2 className="font-grotesk text-2xl font-bold text-text-primary tracking-tight">Laporan {laporanData.kategori}</h2>
             <div className="flex flex-wrap gap-2 gap-x-6 mt-2 text-[13px] text-text-secondary">
-              <span>No. Laporan: <span className="font-mono text-xs">{laporanData.noLaporan}</span></span>
-              <span>&bull;</span>
               <span>Tanggal: <span className="font-mono text-xs">{formatDate(laporanData.tanggal)}</span></span>
               <span>&bull;</span>
               <span>Oleh: <span>{laporanData.pelapor}</span></span>

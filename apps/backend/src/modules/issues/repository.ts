@@ -22,11 +22,15 @@ export async function findAll() {
     include: { warga: { include: { masyarakat: true } } },
     orderBy: { tanggalLapor: 'desc' },
   });
-  return data.map((item: { idLaporan: string; warga: { masyarakat: { nama: string } }; kategoriKendala: string; statusLaporan: string }) => ({
+  return data.map((item: any) => ({
     id: item.idLaporan,
-    nama_warga: item.warga.masyarakat.nama,
+    pelapor: item.warga.masyarakat.nama,
     kategori_kendala: item.kategoriKendala,
+    deskripsi: item.deskripsi,
+    foto_kendala: item.fotoKendala,
+    tanggal_lapor: item.tanggalLapor,
     status_laporan: item.statusLaporan,
+    tanggapan: item.tanggapan,
   }));
 }
 
@@ -38,7 +42,7 @@ export async function findById(id: string) {
   if (!item) return null;
   return {
     id: item.idLaporan,
-    nama_warga: item.warga.masyarakat.nama,
+    pelapor: item.warga.masyarakat.nama,
     kategori_kendala: item.kategoriKendala,
     deskripsi: item.deskripsi,
     foto_kendala: item.fotoKendala,
@@ -53,10 +57,14 @@ export async function findByWargaId(wargaId: string) {
     where: { idWarga: wargaId },
     orderBy: { tanggalLapor: 'desc' },
   });
-  return data.map((item: { idLaporan: string; kategoriKendala: string; statusLaporan: string }) => ({
+  return data.map((item: any) => ({
     id: item.idLaporan,
     kategori_kendala: item.kategoriKendala,
+    deskripsi: item.deskripsi,
+    foto_kendala: item.fotoKendala,
+    tanggal_lapor: item.tanggalLapor,
     status_laporan: item.statusLaporan,
+    tanggapan: item.tanggapan,
   }));
 }
 

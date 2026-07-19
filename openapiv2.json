@@ -3,7 +3,7 @@
   "info": {
     "title": "SMART RT API",
     "version": "2.0.0",
-    "description": "API Contract untuk Sistem SMART RT — mengelola warga, UMKM, iuran, pengumuman, laporan kendala, keuangan, dan profil. Berdasarkan DFD Level 1-3 dan ERD.",
+    "description": "API Contract untuk Sistem SMART RT — mengelola warga, UMKM, iuran, pengumuman, laporan kendala, keuangan, dan profil. Berdasarkan DFD Level 1-3 dan ERD (Prisma schema).",
     "contact": {
       "name": "SMART RT Developer",
       "email": "dev@smartrt.local"
@@ -91,7 +91,7 @@
       "post": {
         "tags": ["Authentication"],
         "summary": "Login",
-        "description": "Melakukan autentikasi pengguna menggunakan username dan password. Response berisi token JWT dan data user (role: RESIDENT, OFFICER, CHAIRPERSON).",
+        "description": "Melakukan autentikasi pengguna menggunakan username dan password. Response berisi token JWT dan data user (role: RESIDENT, OFFICER, CHAIRPERSON). Role ditentukan dari relasi Warga dan PengurusRt.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -147,19 +147,10 @@
             "description": "Username atau password salah",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — role ditentukan dari relasi Warga/PengurusRt (bukan field langsung)"
       }
     },
-    "/auth/logout": {
-      "post": {
-        "tags": ["Authentication"],
-        "summary": "Logout",
-        "description": "Mengakhiri sesi login pengguna.",
-        "security": [{ "BearerAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "Logout berhasil",
-            "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
@@ -177,15 +168,6 @@
         }
       }
     },
-    "/auth/register": {
-      "post": {
-        "tags": ["Authentication"],
-        "summary": "Registrasi Warga",
-        "description": "Mendaftarkan masyarakat sebagai warga RT. Status awal: MENUNGGU verifikasi Ketua RT.",
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
             "application/json": {
               "schema": {
                 "type": "object",
@@ -234,7 +216,7 @@
       "get": {
         "tags": ["Dashboard"],
         "summary": "Dashboard",
-        "description": "Mengambil data dashboard sesuai dengan role pengguna yang sedang login.",
+        "description": "Mengambil data dashboard sesuai dengan role pengguna yang sedang login. Response berbeda per role dengan data agregat dari berbagai tabel.",
         "security": [{ "BearerAuth": [] }],
         "responses": {
           "200": {
@@ -271,7 +253,16 @@
                             "totalUMKM": { "type": "integer" },
                             "totalLaporanKendala": { "type": "integer" },
                             "pengumumanAktif": { "type": "integer" },
-                            "totalPengeluaranKas": { "type": "number" }
+                            "totalPengeluaranKas": { "type": "number" },
+                            "pendingCounts": {
+                              "type": "object",
+                              "properties": {
+                                "umkmMenunggu": { "type": "integer" },
+                                "pembayaranMenunggu": { "type": "integer" },
+                                "laporanMenungguValidasi": { "type": "integer" },
+                                "laporanMenungguTindakLanjut": { "type": "integer" }
+                              }
+                            }
                           }
                         },
                         {
@@ -283,7 +274,16 @@
                             "totalUMKM": { "type": "integer" },
                             "totalLaporanKendala": { "type": "integer" },
                             "pengumumanAktif": { "type": "integer" },
-                            "totalPengeluaranKas": { "type": "number" }
+                            "totalPengeluaranKas": { "type": "number" },
+                            "pendingCounts": {
+                              "type": "object",
+                              "properties": {
+                                "umkmMenunggu": { "type": "integer" },
+                                "pembayaranMenunggu": { "type": "integer" },
+                                "laporanMenungguValidasi": { "type": "integer" },
+                                "laporanMenungguTindakLanjut": { "type": "integer" }
+                              }
+                            }
                           }
                         }
                       ]
@@ -297,7 +297,8 @@
             "description": "Belum login atau token tidak valid",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — ditambahkan pendingCounts untuk Task Grid di frontend"
       }
     },
     "=============================================================": {},
@@ -307,7 +308,7 @@
       "get": {
         "tags": ["Residents"],
         "summary": "Daftar Warga",
-        "description": "Mengambil daftar seluruh warga RT. Hanya Pengurus RT dan Ketua RT.",
+        "description": "Mengambil daftar seluruh warga RT (join Masyarakat + Warga). Hanya Pengurus RT dan Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Cari NIK atau nama" },
@@ -318,7 +319,39 @@
         "responses": {
           "200": {
             "description": "Daftar warga berhasil diambil",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaginationResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/PaginationResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": { "type": "string" },
+                                  "nik": { "type": "string" },
+                                  "nama": { "type": "string" },
+                                  "alamat": { "type": "string" },
+                                  "no_hp": { "type": "string" },
+                                  "statusKeanggotaan": { "type": "string", "enum": ["MENUNGGU", "AKTIF", "DITOLAK"] }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           },
           "401": {
             "description": "Tidak memiliki hak akses",
@@ -328,10 +361,11 @@
             "description": "Forbidden - role tidak mencukupi",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — ditambahkan alamat, no_hp, statusKeanggotaan di response items (dari join Masyarakat + Warga)"
       }
     },
-    "/residents/pending": {
+    "/residents/pending-verifications": {
       "get": {
         "tags": ["Residents"],
         "summary": "Daftar Warga Menunggu Verifikasi",
@@ -355,8 +389,7 @@
                           "nik": { "type": "string" },
                           "nama": { "type": "string" },
                           "alamat": { "type": "string" },
-                          "no_hp": { "type": "string" },
-                          "tanggalDaftar": { "type": "string", "format": "date" }
+                          "no_hp": { "type": "string" }
                         }
                       }
                     }
@@ -373,10 +406,11 @@
             "description": "Hanya Ketua RT",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — removed tanggalDaftar (tidak ada createdAt di tabel Warga Prisma)"
       }
     },
-    "/residents/{residentId}/verify": {
+    "/residents/{residentId}/verification-status": {
       "patch": {
         "tags": ["Residents"],
         "summary": "Verifikasi Warga",
@@ -429,11 +463,11 @@
         }
       }
     },
-    "/residents/{residentId}/officer": {
+    "/residents/{residentId}/officer-role": {
       "patch": {
         "tags": ["Residents"],
         "summary": "Kelola Pengurus RT",
-        "description": "Menetapkan, mengubah, atau menghapus jabatan Pengurus RT. Hanya Ketua RT.",
+        "description": "Menetapkan, mengubah, atau menghapus jabatan Pengurus RT. Untuk hapus, kirim jabatan: null. Hanya Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "residentId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
@@ -489,7 +523,7 @@
       "get": {
         "tags": ["Residents"],
         "summary": "Daftar Pengurus RT",
-        "description": "Mengambil daftar seluruh Pengurus RT. Hanya Pengurus RT dan Ketua RT.",
+        "description": "Mengambil daftar seluruh Pengurus RT (join PengurusRt + Masyarakat). Hanya Pengurus RT dan Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "responses": {
           "200": {
@@ -529,7 +563,7 @@
       "get": {
         "tags": ["Residents"],
         "summary": "Detail Warga",
-        "description": "Mengambil informasi detail seorang warga. Hanya Pengurus RT dan Ketua RT.",
+        "description": "Mengambil informasi detail seorang warga (join Masyarakat + Warga). Hanya Pengurus RT dan Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "residentId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
@@ -585,60 +619,42 @@
         "responses": {
           "200": {
             "description": "Daftar UMKM berhasil diambil",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaginationResponse" } } }
-          }
-        }
-      },
-      "post": {
-        "tags": ["Businesses"],
-        "summary": "Tambah UMKM",
-        "description": "Menambahkan data UMKM baru. Status awal: PENDING. READ Data Warga (id_warga).",
-        "security": [{ "BearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["nama_usaha", "jenis_usaha", "deskripsi_usaha", "alamat_usaha", "kontak_usaha"],
-                "properties": {
-                  "nama_usaha": { "type": "string", "example": "Warung Makan Sari" },
-                  "jenis_usaha": { "type": "string", "example": "Kuliner" },
-                  "deskripsi_usaha": { "type": "string", "example": "Warung makan dengan menu nasi dan lauk..." },
-                  "alamat_usaha": { "type": "string", "example": "Jl. Mawar No. 12, RT 08/RW 03" },
-                  "kontak_usaha": { "type": "string", "example": "081234567890" },
-                  "foto_usaha": { "type": "string", "nullable": true }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/PaginationResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": { "type": "string" },
+                                  "nama_usaha": { "type": "string" },
+                                  "jenis_usaha": { "type": "string" },
+                                  "alamat_usaha": { "type": "string" },
+                                  "status_verifikasi": { "type": "string", "enum": ["PENDING", "VERIFIED", "REJECTED"] },
+                                  "pemilik": { "type": "string" }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
           }
         },
-        "responses": {
-          "201": {
-            "description": "UMKM berhasil didaftarkan",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": { "type": "string", "example": "UMKM berhasil didaftarkan, menunggu verifikasi." },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": { "type": "string" },
-                        "status": { "type": "string", "example": "PENDING" }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validasi gagal",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
-          }
-        }
+        "x-change": "MINOR — ditambahkan field pemilik (dari relasi Warga → Masyarakat.nama)"
       }
     },
     "/businesses/me": {
@@ -664,7 +680,8 @@
                           "id": { "type": "string" },
                           "nama_usaha": { "type": "string" },
                           "jenis_usaha": { "type": "string" },
-                          "status_verifikasi": { "type": "string", "enum": ["PENDING", "VERIFIED", "REJECTED"] }
+                          "status_verifikasi": { "type": "string", "enum": ["PENDING", "VERIFIED", "REJECTED"] },
+                          "pemilik": { "type": "string" }
                         }
                       }
                     }
@@ -673,7 +690,8 @@
               }
             }
           }
-        }
+        },
+        "x-change": "MINOR — ditambahkan field pemilik"
       }
     },
     "/businesses/{businessId}": {
@@ -705,8 +723,7 @@
                         "kontak_usaha": { "type": "string" },
                         "foto_usaha": { "type": "string", "nullable": true },
                         "status_verifikasi": { "type": "string" },
-                        "pemilik": { "type": "string" },
-                        "tanggal_daftar": { "type": "string", "format": "date" }
+                        "pemilik": { "type": "string" }
                       }
                     }
                   }
@@ -718,8 +735,11 @@
             "description": "UMKM tidak ditemukan",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
-      },
+        },
+        "x-change": "MINOR — removed tanggal_daftar (tidak ada createdAt di tabel Umkm Prisma)"
+      }
+    },
+    "/businesses/{businessId}": {
       "patch": {
         "tags": ["Businesses"],
         "summary": "Ubah UMKM",
@@ -794,11 +814,11 @@
         }
       }
     },
-    "/businesses/{businessId}/verify": {
+    "/businesses/{businessId}/status": {
       "patch": {
         "tags": ["Businesses"],
         "summary": "Validasi UMKM",
-        "description": "Memvalidasi status UMKM. READ Data Pengurus RT (id_pengurus_validator). Hanya Pengurus RT dan Ketua RT.",
+        "description": "Memvalidasi status UMKM. Hanya Pengurus RT dan Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "businessId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
@@ -864,29 +884,36 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": { "type": "string", "example": "Data iuran berhasil diambil." },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": { "type": "string" },
-                          "nama_iuran": { "type": "string" },
-                          "jenis_iuran": { "type": "string" },
-                          "nominal": { "type": "number" },
-                          "tanggal_jatuh_tempo": { "type": "string", "format": "date" },
-                          "status_aktif": { "type": "boolean" }
+                  "allOf": [
+                    { "$ref": "#/components/schemas/PaginationResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": { "type": "string" },
+                                  "nama_iuran": { "type": "string" },
+                                  "jenis_iuran": { "type": "string" },
+                                  "nominal": { "type": "number" },
+                                  "tanggal_jatuh_tempo": { "type": "string", "format": "date" },
+                                  "status_aktif": { "type": "boolean" }
+                                }
+                              }
+                            }
+                          }
                         }
                       }
-                    }
+                    ]
                   }
                 }
               }
             }
-          }
-        }
       },
       "post": {
         "tags": ["Dues"],
@@ -899,10 +926,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["nama_iuran", "jenis_iuran", "nominal", "tanggal_jatuh_tempo"],
+                "required": ["nama_iuran", "nominal", "tanggal_jatuh_tempo"],
                 "properties": {
-                  "nama_iuran": { "type": "string", "example": "Iuran Keamanan" },
-                  "jenis_iuran": { "type": "string", "example": "Keamanan" },
+                  "nama_iuran": { "type": "string", "maxLength": 40, "example": "Iuran Keamanan" },
                   "nominal": { "type": "number", "example": 30000 },
                   "tanggal_jatuh_tempo": { "type": "string", "format": "date", "example": "2026-07-31" }
                 }
@@ -1062,11 +1088,11 @@
     "=============================================================": {},
     "==================== PAYMENTS ====================": {},
     "=============================================================": {},
-    "/payments/bills": {
+    "/dues/bills/current": {
       "get": {
         "tags": ["Payments"],
         "summary": "Tagihan Saya",
-        "description": "Mengambil daftar tagihan iuran milik warga yang sedang login.",
+        "description": "Mengambil daftar tagihan iuran milik warga yang sedang login. Logika: semua iuran aktif - sudah dibayar = tagihan.",
         "security": [{ "BearerAuth": [] }],
         "responses": {
           "200": {
@@ -1088,6 +1114,7 @@
                           "jenis_iuran": { "type": "string" },
                           "periode": { "type": "string" },
                           "nominal": { "type": "number" },
+                          "tanggal_jatuh_tempo": { "type": "string", "format": "date" },
                           "status": { "type": "string", "enum": ["BELUM_DIBAYAR", "PENDING", "VERIFIED", "REJECTED"] }
                         }
                       }
@@ -1100,11 +1127,11 @@
         }
       }
     },
-    "/payments": {
+    "/dues/payments": {
       "post": {
         "tags": ["Payments"],
         "summary": "Kirim Pembayaran",
-        "description": "Mengirim data pembayaran iuran. READ Data Warga (id_warga) dan Data Iuran (id_iuran).",
+        "description": "Mengirim data pembayaran iuran. Catatan: field id_pengurus akan diisi dengan ID pengurus yang memproses (default: SISTEM jika warga bayar mandiri).",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -1114,11 +1141,11 @@
                 "type": "object",
                 "required": ["id_iuran", "periode", "metode_bayar", "jumlah_bayar", "bukti_pembayaran"],
                 "properties": {
-                  "id_iuran": { "type": "string", "example": "IUR-001" },
+                  "id_iuran": { "type": "string", "example": "uuid-iuran" },
                   "periode": { "type": "string", "example": "Juli 2026" },
-                  "metode_bayar": { "type": "string", "enum": ["TRANSFER_BANK", "TUNAI", "QRIS"] },
+                  "metode_bayar": { "type": "string", "maxLength": 15, "enum": ["TRANSFER_BANK", "TUNAI", "QRIS"] },
                   "jumlah_bayar": { "type": "number", "example": 25000 },
-                  "bukti_pembayaran": { "type": "string", "example": "bukti-transfer.jpg" }
+                  "bukti_pembayaran": { "type": "string", "nullable": true, "example": "bukti-transfer.jpg" }
                 }
               }
             }
@@ -1146,7 +1173,8 @@
             "description": "Data iuran tidak ditemukan",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — added maxLength 15 untuk metode_bayar (sesuai Prisma)"
       },
       "get": {
         "tags": ["Payments"],
@@ -1162,16 +1190,51 @@
         "responses": {
           "200": {
             "description": "Daftar pembayaran berhasil diambil",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaginationResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/PaginationResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": { "type": "string" },
+                                  "warga": { "type": "string" },
+                                  "iuran": { "type": "string" },
+                                  "periode": { "type": "string" },
+                                  "nominal": { "type": "number" },
+                                  "tanggal_bayar": { "type": "string", "format": "date" },
+                                  "metode_bayar": { "type": "string" },
+                                  "status_verifikasi": { "type": "string", "enum": ["PENDING", "VERIFIED", "REJECTED"] }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           },
           "401": {
             "description": "Tidak memiliki hak akses",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — ditambahkan metode_bayar dan tanggal_bayar di list items"
       }
     },
-    "/payments/me": {
+    "/dues/me/payments": {
       "get": {
         "tags": ["Payments"],
         "summary": "Riwayat Pembayaran Saya",
@@ -1209,7 +1272,7 @@
         }
       }
     },
-    "/payments/{paymentId}": {
+    "/dues/payments/{paymentId}": {
       "get": {
         "tags": ["Payments"],
         "summary": "Detail Pembayaran",
@@ -1237,7 +1300,7 @@
                         "tanggal_bayar": { "type": "string", "format": "date" },
                         "metode_bayar": { "type": "string" },
                         "jumlah_bayar": { "type": "number" },
-                        "bukti_pembayaran": { "type": "string" },
+                        "bukti_pembayaran": { "type": "string", "nullable": true },
                         "status_verifikasi": { "type": "string" }
                       }
                     }
@@ -1253,11 +1316,11 @@
         }
       }
     },
-    "/payments/{paymentId}/verify": {
+    "/dues/payments/{paymentId}/status": {
       "patch": {
         "tags": ["Payments"],
         "summary": "Verifikasi Pembayaran",
-        "description": "Mengubah status verifikasi pembayaran. READ Data Pengurus RT (id_pengurus_validator). Hanya Pengurus RT dan Ketua RT.",
+        "description": "Mengubah status verifikasi pembayaran. Hanya Pengurus RT dan Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "paymentId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
@@ -1320,14 +1383,48 @@
         "responses": {
           "200": {
             "description": "Daftar pengumuman berhasil diambil",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaginationResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/PaginationResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": { "type": "string" },
+                                  "judul": { "type": "string" },
+                                  "isi_pengumuman": { "type": "string" },
+                                  "lampiran": { "type": "string", "nullable": true },
+                                  "tanggal_pengumuman": { "type": "string", "format": "date" },
+                                  "status_publikasi": { "type": "string", "enum": ["PUBLISHED", "DRAFT"] },
+                                  "author": { "type": "string" }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
-        }
+        },
+        "x-change": "MINOR — ditambahkan isi_pengumuman, lampiran, author di list items"
       },
       "post": {
         "tags": ["Announcements"],
         "summary": "Tambah Pengumuman",
-        "description": "Menambahkan pengumuman baru. READ Data Pengurus RT (id_pengurus). Hanya Pengurus RT dan Ketua RT.",
+        "description": "Menambahkan pengumuman baru. Hanya Pengurus RT dan Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -1337,7 +1434,7 @@
                 "type": "object",
                 "required": ["judul", "isi_pengumuman", "status_publikasi"],
                 "properties": {
-                  "judul": { "type": "string", "example": "Kerja Bakti RT 08" },
+                  "judul": { "type": "string", "maxLength": 15, "example": "Kerja Bakti RT" },
                   "isi_pengumuman": { "type": "string", "example": "Kerja bakti akan dilaksanakan hari Minggu..." },
                   "lampiran": { "type": "string", "nullable": true, "example": "kerja-bakti.pdf" },
                   "status_publikasi": { "type": "string", "enum": ["PUBLISHED", "DRAFT"] }
@@ -1364,7 +1461,8 @@
             "description": "Tidak memiliki hak akses",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — added maxLength 15 untuk judul (sesuai Prisma VarChar(15))"
       }
     },
     "/announcements/{announcementId}": {
@@ -1393,7 +1491,8 @@
                         "isi_pengumuman": { "type": "string" },
                         "lampiran": { "type": "string", "nullable": true },
                         "tanggal_pengumuman": { "type": "string", "format": "date" },
-                        "status_publikasi": { "type": "string" }
+                        "status_publikasi": { "type": "string" },
+                        "author": { "type": "string" }
                       }
                     }
                   }
@@ -1401,7 +1500,8 @@
               }
             }
           }
-        }
+        },
+        "x-change": "MINOR — ditambahkan field author (dari relasi PengurusRt → Masyarakat)"
       },
       "patch": {
         "tags": ["Announcements"],
@@ -1482,7 +1582,7 @@
       "get": {
         "tags": ["Issues"],
         "summary": "Daftar Laporan Kendala",
-        "description": "Mengambil daftar laporan kendala. Warga hanya melihat milik sendiri, pengurus/ketua melihat semua.",
+        "description": "Mengambil daftar laporan kendala. Warga hanya melihat milik sendiri via /issues/me, pengurus/ketua melihat semua via /issues.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PENDING", "VERIFIED", "IN_PROGRESS", "COMPLETED", "REJECTED"] }, "description": "Filter status" },
@@ -1493,14 +1593,49 @@
         "responses": {
           "200": {
             "description": "Daftar laporan berhasil diambil",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaginationResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/PaginationResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": { "type": "string" },
+                                  "kategori_kendala": { "type": "string" },
+                                  "pelapor": { "type": "string" },
+                                  "deskripsi": { "type": "string" },
+                                  "tanggal_lapor": { "type": "string", "format": "date" },
+                                  "status_laporan": { "type": "string", "enum": ["PENDING", "VERIFIED", "IN_PROGRESS", "COMPLETED", "REJECTED"] },
+                                  "foto_kendala": { "type": "string", "nullable": true },
+                                  "tanggapan": { "type": "string", "nullable": true }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
-        }
+        },
+        "x-change": "MINOR — ditambahkan deskripsi, foto_kendala, tanggapan di list items"
       },
       "post": {
         "tags": ["Issues"],
         "summary": "Buat Laporan Kendala",
-        "description": "Membuat laporan kendala baru. READ Data Warga (id_warga).",
+        "description": "Membuat laporan kendala baru.",
         "security": [{ "BearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -1510,7 +1645,7 @@
                 "type": "object",
                 "required": ["kategori_kendala", "deskripsi"],
                 "properties": {
-                  "kategori_kendala": { "type": "string", "example": "Lampu Jalan Mati" },
+                  "kategori_kendala": { "type": "string", "maxLength": 15, "example": "Lampu Jalan Mati" },
                   "deskripsi": { "type": "string", "example": "Lampu jalan di depan rumah nomor 12 mati..." },
                   "foto_kendala": { "type": "string", "nullable": true, "example": "jalan.jpg" }
                 }
@@ -1536,7 +1671,47 @@
             "description": "Validasi gagal",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — added maxLength 15 untuk kategori_kendala (sesuai Prisma)"
+      }
+    },
+    "/issues/me": {
+      "get": {
+        "tags": ["Issues"],
+        "summary": "Laporan Saya",
+        "description": "Mengambil daftar laporan milik pengguna yang sedang login (sebagai warga).",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Daftar laporan berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Data laporan berhasil diambil." },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "kategori_kendala": { "type": "string" },
+                          "deskripsi": { "type": "string" },
+                          "tanggal_lapor": { "type": "string", "format": "date" },
+                          "status_laporan": { "type": "string" },
+                          "foto_kendala": { "type": "string", "nullable": true },
+                          "tanggapan": { "type": "string", "nullable": true }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "x-change": "MINOR — ditambahkan deskripsi, tanggal_lapor, foto_kendala, tanggapan"
       }
     },
     "/issues/{issueId}": {
@@ -1561,7 +1736,6 @@
                       "type": "object",
                       "properties": {
                         "id": { "type": "string" },
-                        "no_laporan": { "type": "string", "example": "007/KEND/RT08/VII/2026" },
                         "kategori_kendala": { "type": "string" },
                         "deskripsi": { "type": "string" },
                         "foto_kendala": { "type": "string", "nullable": true },
@@ -1580,14 +1754,15 @@
             "description": "Tidak memiliki hak akses",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — removed no_laporan (tidak ada di Prisma)"
       }
     },
-    "/issues/{issueId}/verify": {
+    "/issues/{issueId}/status": {
       "patch": {
         "tags": ["Issues"],
         "summary": "Validasi Laporan",
-        "description": "Memvalidasi laporan kendala (PENDING → VERIFIED/REJECTED). READ Data Pengurus RT (id_pengurus_validator). Hanya Pengurus RT dan Ketua RT.",
+        "description": "Memvalidasi laporan kendala (PENDING → VERIFIED/REJECTED). Hanya Pengurus RT dan Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "issueId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
@@ -1636,7 +1811,7 @@
       "patch": {
         "tags": ["Issues"],
         "summary": "Tindak Lanjut Laporan",
-        "description": "Memberikan tanggapan tindak lanjut pada laporan kendala (VERIFIED → IN_PROGRESS/COMPLETED). READ Data Pengurus RT (id_pengurus). Hanya Pengurus RT dan Ketua RT.",
+        "description": "Memberikan tanggapan tindak lanjut pada laporan kendala (VERIFIED → IN_PROGRESS/COMPLETED). Hanya Pengurus RT dan Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "issueId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
@@ -1684,7 +1859,7 @@
       "get": {
         "tags": ["Finance"],
         "summary": "Daftar Pengeluaran Kas",
-        "description": "Mengambil daftar seluruh data pengeluaran kas. READ Data Pengurus RT (id_pengurus). Hanya Pengurus RT dan Ketua RT.",
+        "description": "Mengambil daftar seluruh data pengeluaran kas. Hanya Pengurus RT dan Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "kategori", "in": "query", "schema": { "type": "string" }, "description": "Filter kategori pengeluaran" },
@@ -1695,13 +1870,46 @@
         "responses": {
           "200": {
             "description": "Daftar pengeluaran kas berhasil diambil",
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaginationResponse" } } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/PaginationResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "items": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": { "type": "string" },
+                                  "kategori_pengeluaran": { "type": "string" },
+                                  "nominal_pengeluaran": { "type": "number" },
+                                  "tanggal_keluar": { "type": "string", "format": "date" },
+                                  "keterangan": { "type": "string" },
+                                  "bukti_nota": { "type": "string", "nullable": true }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           },
           "401": {
             "description": "Tidak memiliki hak akses",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — ditambahkan keterangan dan bukti_nota di list items"
       },
       "post": {
         "tags": ["Finance"],
@@ -1716,10 +1924,10 @@
                 "type": "object",
                 "required": ["kategori_pengeluaran", "nominal_pengeluaran", "tanggal_keluar", "keterangan"],
                 "properties": {
-                  "kategori_pengeluaran": { "type": "string", "example": "Kebersihan" },
+                  "kategori_pengeluaran": { "type": "string", "maxLength": 15, "example": "Kebersihan" },
                   "nominal_pengeluaran": { "type": "number", "example": 500000 },
                   "tanggal_keluar": { "type": "string", "format": "date", "example": "2026-07-08" },
-                  "keterangan": { "type": "string", "example": "Pembelian alat kebersihan" },
+                  "keterangan": { "type": "string", "maxLength": 30, "example": "Pembelian alat kebersihan" },
                   "bukti_nota": { "type": "string", "nullable": true, "example": "nota.pdf" }
                 }
               }
@@ -1748,7 +1956,8 @@
             "description": "Tidak memiliki hak akses",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "MINOR — added maxLength 15 untuk kategori, 30 untuk keterangan (sesuai Prisma)"
       }
     },
     "/finance/expenses/{expenseId}": {
@@ -1864,11 +2073,14 @@
         }
       }
     },
+    "=============================================================": {},
+    "==================== FINANCE REPORT ====================": {},
+    "=============================================================": {},
     "/finance/report": {
       "get": {
         "tags": ["Finance"],
         "summary": "Laporan Keuangan",
-        "description": "Mengambil laporan keuangan lengkap (pemasukan & pengeluaran). Hanya Ketua RT.",
+        "description": "Mengambil laporan keuangan lengkap (pemasukan dari pembayaran iuran terverifikasi & pengeluaran kas). Hanya Ketua RT.",
         "security": [{ "BearerAuth": [] }],
         "parameters": [
           { "name": "periode", "in": "query", "schema": { "type": "string", "example": "2026-07" }, "description": "Periode dalam format YYYY-MM" }
@@ -1889,8 +2101,31 @@
                         "totalPengeluaran": { "type": "number" },
                         "saldoAkhir": { "type": "number" },
                         "jumlahTransaksi": { "type": "integer" },
-                        "pemasukan": { "type": "array", "items": { "type": "object" } },
-                        "pengeluaran": { "type": "array", "items": { "type": "object" } }
+                        "pemasukan": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "warga": { "type": "string" },
+                              "iuran": { "type": "string" },
+                              "periode": { "type": "string" },
+                              "tanggal": { "type": "string", "format": "date" },
+                              "nominal": { "type": "number" }
+                            }
+                          }
+                        },
+                        "pengeluaran": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "kategori": { "type": "string" },
+                              "keterangan": { "type": "string" },
+                              "tanggal": { "type": "string", "format": "date" },
+                              "nominal": { "type": "number" }
+                            }
+                          }
+                        }
                       }
                     }
                   }
@@ -1906,7 +2141,8 @@
             "description": "Hanya Ketua RT",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
-        }
+        },
+        "x-change": "NEW ENDPOINT — laporan keuangan agregat dari PembayaranIuran + PengeluaranKas"
       }
     },
     "=============================================================": {},
@@ -1916,7 +2152,7 @@
       "get": {
         "tags": ["Profile"],
         "summary": "Lihat Profil",
-        "description": "Mengambil informasi profil pengguna yang sedang login.",
+        "description": "Mengambil informasi profil pengguna yang sedang login (dari Masyarakat + Warga/PengurusRt).",
         "security": [{ "BearerAuth": [] }],
         "responses": {
           "200": {
@@ -1995,6 +2231,52 @@
           }
         }
       }
+    },
+    "=============================================================": {},
+    "==================== DASHBOARD ACTIVITIES (NEW) ====================": {},
+    "=============================================================": {},
+    "/dashboard/activities": {
+      "get": {
+        "tags": ["Dashboard"],
+        "summary": "Aktivitas Terbaru",
+        "description": "[NEW ENDPOINT] Mengambil 10 aktivitas terbaru dari seluruh modul (laporan kendala, pembayaran, pengumuman) untuk ditampilkan di dashboard.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 }, "description": "Jumlah aktivitas yang diambil" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aktivitas berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Aktivitas berhasil diambil." },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "tipe": { "type": "string", "enum": ["LAPORAN", "PEMBAYARAN", "PENGUMUMAN", "VERIFIKASI_WARGA"] },
+                          "judul": { "type": "string" },
+                          "status": { "type": "string" },
+                          "meta": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Belum login atau token tidak valid",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      },
+      "x-change": "NEW ENDPOINT — aktivitas terbaru untuk dashboard (aggregasi dari beberapa tabel)"
     }
   }
 }

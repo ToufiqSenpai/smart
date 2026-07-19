@@ -1,6 +1,8 @@
+import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
 
 export default function WargaLaporanBaru() {
+  var navigate = useNavigate()
   return (
     <DashboardLayout>
       <div className="mb-8">
@@ -48,7 +50,7 @@ export default function WargaLaporanBaru() {
           </div>
 
           <div className="flex gap-3 mt-8 pt-6 border-t border-border-subtle">
-            <button type="button" className="inline-flex items-center justify-center gap-2 px-7 py-[10px] font-sans text-sm font-semibold border-none rounded-full cursor-pointer min-h-[44px] transition-all bg-bg-hover text-text-secondary border border-border-subtle" onClick={() => window.location.href = "/warga/monitoring-laporan"}>Lihat Laporan Saya</button>
+            <button type="button" className="inline-flex items-center justify-center gap-2 px-7 py-[10px] font-sans text-sm font-semibold border-none rounded-full cursor-pointer min-h-[44px] transition-all bg-bg-hover text-text-secondary border border-border-subtle" onClick={() => navigate("/monitoring-laporan")}>Lihat Laporan Saya</button>
             <button type="submit" className="inline-flex items-center justify-center gap-2 px-7 py-[10px] font-sans text-sm font-semibold border-none rounded-full cursor-pointer min-h-[44px] transition-all bg-primary text-white" id="submitBtn">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
               Kirim Laporan

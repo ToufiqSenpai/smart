@@ -36,10 +36,6 @@ export default function WargaDetailUMKM() {
                 <span className="font-mono text-[13px]">081234567890</span>
               </span>
               <span className="flex items-center gap-2 text-[13px] text-text-secondary">
-                <svg className="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><polyline points="12 7 12 12 15.5 14" /></svg>
-                <span>Terdaftar: 10 Juli 2026</span>
-              </span>
-              <span className="flex items-center gap-2 text-[13px] text-text-secondary">
                 <svg className="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                 <span>Pemilik: Budi Santoso</span>
               </span>
@@ -91,17 +87,9 @@ export default function WargaDetailUMKM() {
                 </span>
               </span>
             </div>
-            <div className="flex justify-between items-center pb-3 border-b border-border-subtle text-[13.5px]">
-              <span className="text-text-muted font-medium">Tanggal Daftar</span>
-              <span className="text-text-primary font-semibold text-right font-mono text-[13px]">10/07/2026</span>
-            </div>
-            <div className="flex justify-between items-center pb-3 border-b border-border-subtle text-[13.5px]">
+            <div className="flex justify-between items-center text-[13.5px]" style={{ borderBottom: "none", paddingBottom: 0 }}>
               <span className="text-text-muted font-medium">Pemilik</span>
               <span className="text-text-primary font-semibold text-right">Budi Santoso</span>
-            </div>
-            <div className="flex justify-between items-center text-[13.5px]" style={{ borderBottom: "none", paddingBottom: 0 }}>
-              <span className="text-text-muted font-medium">No. Registrasi</span>
-              <span className="text-text-primary font-semibold text-right font-mono text-[13px]">007/UMKM/RT08/VII/2026</span>
             </div>
           </div>
         </div>
