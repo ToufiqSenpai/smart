@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getAnnouncementsApi } from "../../utils/mockApi"
+import { getAnnouncements, deleteAnnouncement } from "../../api/announcements.api"
 
 const statusClass = {
   PUBLISHED: "inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-bold border bg-success-bg text-success border-success/10",
@@ -22,15 +22,30 @@ export default function KetuaPengumuman() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getAnnouncementsApi().then(setData).finally(() => setLoading(false))
+    getAnnouncements()
+      .then(res => setData(res.data))
+      .catch(err => console.error('Gagal memuat pengumuman:', err))
+      .finally(() => setLoading(false))
   }, [])
 
   const filtered = data.filter((p) => {
     const matchSearch = p.judul.toLowerCase().includes(search.toLowerCase())
-    const statusMap = { PUBLISHED: "publik", DRAFT: "draft" }
-    const matchStatus = statusFilter === "all" || statusMap[p.status_publikasi] === statusFilter
+    const matchStatus = statusFilter === "all" || p.status_publikasi === statusFilter
     return matchSearch && matchStatus
   })
+
+  const refresh = () => {
+    getAnnouncements()
+      .then(res => setData(res.data))
+      .catch(err => console.error('Gagal memuat pengumuman:', err))
+  }
+
+  const handleDelete = (id, judul) => {
+    if (!confirm(`Hapus pengumuman "${judul}"?`)) return
+    deleteAnnouncement(id)
+      .then(() => refresh())
+      .catch(err => console.error('Gagal menghapus pengumuman:', err))
+  }
 
   return (
     <DashboardLayout>
@@ -50,8 +65,8 @@ export default function KetuaPengumuman() {
             <label htmlFor="statusFilter" className="text-xs font-semibold text-text-muted uppercase tracking-[0.05em]">Status</label>
             <select id="statusFilter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3.5 py-1.5 pl-[14px] pr-[32px] font-sans text-[13px] text-text-primary bg-bg border border-border-subtle rounded-full outline-none h-[38px] appearance-none cursor-pointer transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(30,75,133,0.06)]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2371717A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}>
               <option value="all">Semua</option>
-              <option value="publik">Publik</option>
-              <option value="draft">Draft</option>
+              <option value="PUBLISHED">Publik</option>
+              <option value="DRAFT">Draft</option>
             </select>
           </div>
           <span className="text-xs font-semibold text-text-muted bg-bg px-3.5 py-1 rounded-full border border-border-subtle whitespace-nowrap" id="rowCount">{filtered.length} pengumuman</span>
@@ -92,7 +107,7 @@ export default function KetuaPengumuman() {
                   <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0 text-right">
                     <div className="flex items-center gap-2 justify-end flex-wrap">
                       <button className="inline-flex items-center gap-1 px-3.5 py-1 font-sans text-xs font-semibold rounded-full cursor-pointer transition-all min-h-[32px] bg-transparent text-primary border border-border-subtle hover:bg-primary-light hover:border-primary" onClick={() => navigate('/edit-pengumuman/' + p.id)}>Edit</button>
-                      <button className="inline-flex items-center gap-1 px-3.5 py-1 font-sans text-xs font-semibold rounded-full cursor-pointer transition-all min-h-[32px] bg-error/10 text-error border border-error/10 hover:bg-error hover:text-white">Hapus</button>
+                      <button className="inline-flex items-center gap-1 px-3.5 py-1 font-sans text-xs font-semibold rounded-full cursor-pointer transition-all min-h-[32px] bg-error/10 text-error border border-error/10 hover:bg-error hover:text-white" onClick={() => handleDelete(p.id, p.judul)}>Hapus</button>
                     </div>
                   </td>
                 </tr>

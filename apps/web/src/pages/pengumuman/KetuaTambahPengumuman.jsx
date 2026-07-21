@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import { createAnnouncement } from "../../api/announcements.api"
 
 const ICONS = {
   check: (
@@ -72,19 +73,27 @@ export default function KetuaTambahPengumuman() {
     return newErrors
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const newErrors = validate()
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
 
     setLoading(true)
-    setTimeout(() => {
-      const statusLabel = form.status === "publik" ? "Publik" : "Draft"
-      addToast("success", "Pengumuman ditambahkan!", `"${form.judul}" berhasil ditambahkan dengan status ${statusLabel}.`)
+    try {
+      await createAnnouncement({
+        judul: form.judul,
+        isi_pengumuman: form.isi,
+        status_publikasi: form.status === 'publik' ? 'PUBLISHED' : 'DRAFT',
+        lampiran: file ? file.name : null,
+      })
+      addToast("success", "Pengumuman ditambahkan!", `"${form.judul}" berhasil ditambahkan.`)
+      setTimeout(() => navigate("/kelola-pengumuman"), 1500)
+    } catch (err) {
+      addToast("error", "Gagal menambahkan", err?.message || "Terjadi kesalahan, coba lagi.")
+    } finally {
       setLoading(false)
-      setTimeout(() => navigate("/pengumuman"), 1500)
-    }, 1200)
+    }
   }
 
   return (

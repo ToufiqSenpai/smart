@@ -68,20 +68,25 @@ function NavItem({ item, currentPath }) {
   return null
 }
 
-const roleConfig = {
-  RESIDENT: { nav: wargaNav, userName: "Ani Wijaya", userRole: "Warga", initials: "AW" },
-  OFFICER: { nav: pengurusNav, userName: "Agus Saputra", userRole: "Sekretaris", initials: "AS" },
-  CHAIRPERSON: { nav: ketuaNav, userName: "Budi Santoso", userRole: "Ketua RT", initials: "BS" },
+function generateInitials(nama) {
+  return (nama || '').split(' ').map(k => k.charAt(0).toUpperCase()).slice(0, 2).join('')
 }
 
 export default function DashboardLayout({ children }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
 
-  const role = user?.role || "CHAIRPERSON"
-  const config = roleConfig[role] || roleConfig.CHAIRPERSON
-  const { nav: navItems, userName, userRole, initials: userInitials } = config
+  const role = user?.role || "RESIDENT"
+  const navItems = role === "CHAIRPERSON" ? ketuaNav : role === "OFFICER" ? pengurusNav : wargaNav
+  const userName = user?.nama || ''
+  const userRole = user?.jabatan || (role === "CHAIRPERSON" ? "Ketua RT" : role === "OFFICER" ? "Pengurus" : "Warga")
+  const userInitials = generateInitials(userName)
+
+  const handleLogout = () => {
+    logout()
+    navigate("/login")
+  }
 
   return (
     <div className="grid grid-cols-[280px_1fr] min-h-screen bg-canvas max-md:grid-cols-[80px_1fr] max-sm:grid-cols-1">
@@ -115,7 +120,7 @@ export default function DashboardLayout({ children }) {
             </div>
           </div>
           <button
-            onClick={() => navigate("/login")}
+            onClick={handleLogout}
             className="flex items-center gap-2 text-white/60 text-[12.5px] transition-colors duration-200 hover:text-[#FF8A8A] bg-transparent border-none cursor-pointer font-sans p-0 max-md:justify-center max-md:mt-4"
           >
             <Logout className="w-[18px] h-[18px]" />

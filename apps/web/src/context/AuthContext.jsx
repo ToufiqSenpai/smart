@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback } from "react"
-import { loginApi } from "../utils/mockApi"
+import { login as loginApi } from "../api/auth.api"
 
 const AuthContext = createContext(null)
 
@@ -12,7 +12,9 @@ export function AuthProvider({ children }) {
     setLoading(true)
     try {
       const result = await loginApi(credentials)
-      setUser(result.user)
+      const { accessToken, user: userData } = result.data
+      localStorage.setItem('accessToken', accessToken)
+      setUser(userData)
       return result
     } finally {
       setLoading(false)
@@ -20,6 +22,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const logout = useCallback(() => {
+    localStorage.removeItem('accessToken')
     setUser(null)
   }, [])
 

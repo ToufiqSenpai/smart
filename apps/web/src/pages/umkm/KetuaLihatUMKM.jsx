@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getBusinessesApi } from "../../utils/mockApi"
+import { getBusinesses } from "../../api/businesses.api"
 
 const statusClass = {
   VERIFIED: "status-badge-td success",
@@ -10,14 +11,19 @@ const statusClass = {
 const statusLabel = { VERIFIED: "Terverifikasi", PENDING: "Menunggu", REJECTED: "Ditolak" }
 
 export default function KetuaLihatUMKM() {
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    
-    getBusinessesApi({ keyword: search, status: statusFilter }).then(setData).finally(() => setLoading(false))
+    getBusinesses({ keyword: search || undefined })
+      .then(res => {
+        setData(statusFilter !== 'all' ? res.data.filter(u => u.status_verifikasi === statusFilter) : res.data)
+      })
+      .catch(err => console.error('Gagal memuat UMKM:', err))
+      .finally(() => setLoading(false))
   }, [search, statusFilter])
 
   return (
@@ -113,7 +119,7 @@ export default function KetuaLihatUMKM() {
                   <td>{u.pemilik}</td>
                   <td>{u.jenis_usaha}</td>
                   <td><span className={statusClass[u.status_verifikasi]}>{statusLabel[u.status_verifikasi]}</span></td>
-                  <td style={{ textAlign: "right" }}><a href={`/ketua/lihat-umkm/${u.id}`} className="action-link">Detail</a></td>
+                  <td style={{ textAlign: "right" }}><button onClick={() => navigate(`/detail-validasi-umkm/${u.id}`)} className="action-link">Detail</button></td>
                 </tr>
               ))}
             </tbody>

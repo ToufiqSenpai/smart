@@ -1,125 +1,107 @@
-import { Link } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import { getMyIssues } from "../../api/issues.api"
+
+function formatDate(d) { if (!d) return ''; var p = d.split('T')[0].split('-'), m = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des']; return parseInt(p[2]) + ' ' + m[parseInt(p[1]) - 1] + ' ' + p[0] }
+
+var statusClass = { PENDING: 'menunggu', VERIFIED: 'diverifikasi', IN_PROGRESS: 'proses', COMPLETED: 'selesai', REJECTED: 'ditolak' }
+var labels = { PENDING: 'Menunggu', VERIFIED: 'Diverifikasi', IN_PROGRESS: 'Dalam Proses', COMPLETED: 'Selesai', REJECTED: 'Ditolak' }
 
 export default function WargaMonitoringLaporan() {
+  var navigate = useNavigate()
+  var [data, setData] = useState([])
+  var [loading, setLoading] = useState(true)
+  var [search, setSearch] = useState('')
+  var [statusFilter, setStatusFilter] = useState('all')
+
+  useEffect(() => {
+    getMyIssues().then(r => setData(r.data)).catch(console.error).finally(() => setLoading(false))
+  }, [])
+
+  var filtered = data.filter(i => {
+    var ms = i.kategori_kendala.toLowerCase().includes(search.toLowerCase())
+    var mf = statusFilter === 'all' || i.status_laporan === statusFilter
+    return ms && mf
+  })
+
+  var stats = { semua: data.length, menunggu: data.filter(i => i.status_laporan === 'PENDING').length, proses: data.filter(i => i.status_laporan === 'VERIFIED' || i.status_laporan === 'IN_PROGRESS').length, selesai: data.filter(i => i.status_laporan === 'COMPLETED').length }
+
   return (
     <DashboardLayout>
-      <style>{`
-        .hero-row { margin-bottom: var(--sp-32); }
-        .page-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--gold-seal); margin-bottom: var(--sp-8); }
-        .page-title { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--ink-black); letter-spacing: -0.6px; line-height: 1.2; margin-bottom: var(--sp-8); }
-        .page-sub { font-size: 14.5px; color: var(--ink-subtle); }
-
-        .toolbar { background: var(--white); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--sp-16) var(--sp-24); display: flex; align-items: center; justify-content: space-between; gap: var(--sp-16); flex-wrap: wrap; margin-bottom: var(--sp-32); box-shadow: var(--shadow-lux); }
-        .toolbar-left { display: flex; align-items: center; gap: var(--sp-16); flex-wrap: wrap; flex: 1; }
-        .search-wrapper { flex: 1; min-width: 200px; position: relative; }
-        .search-wrapper .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-subtle); pointer-events: none; }
-        .search-wrapper input { width: 100%; padding: 8px 12px 8px 38px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13.5px; color: var(--ink-black); background: var(--bg-neutral); border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); outline: none; height: 38px; transition: all 0.2s ease; }
-        .search-wrapper input:focus { border-color: var(--navy-brand); box-shadow: 0 0 0 3px var(--navy-brand-light); }
-        .filter-group { display: flex; align-items: center; gap: var(--sp-8); }
-        .filter-group label { font-size: 12px; font-weight: 600; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .filter-group select { padding: 6px 32px 6px 14px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; color: var(--ink-black); background: var(--bg-neutral); border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); outline: none; height: 38px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2371717A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; transition: all 0.2s ease; }
-        .filter-group select:focus { border-color: var(--navy-brand); box-shadow: 0 0 0 3px var(--navy-brand-light); }
-        .badge-count { font-size: 12px; font-weight: 600; color: var(--ink-muted); background: var(--bg-neutral); padding: 4px 14px; border-radius: var(--radius-pill); border: 1px solid var(--border-subtle); white-space: nowrap; }
-
-        .btn-primary-sm { display: inline-flex; align-items: center; gap: var(--sp-8); padding: 8px 20px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 600; background: var(--navy-brand); color: var(--white); border: none; border-radius: var(--radius-pill); cursor: pointer; min-height: 38px; transition: all 0.2s ease; white-space: nowrap; text-decoration: none; }
-        .btn-primary-sm:hover { background: #163b6a; box-shadow: 0 4px 12px rgba(30, 75, 133, 0.25); transform: translateY(-1px); }
-        .btn-primary-sm .icon { width: 16px; height: 16px; }
-
-        .table-container { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-lux); overflow: hidden; }
-        .table-header { padding: var(--sp-20) var(--sp-24); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--sp-12); }
-        .table-header h3 { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--ink-black); }
-        .table-wrapper { overflow-x: auto; padding: 0 var(--sp-24) var(--sp-24) var(--sp-24); }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        table thead th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-subtle); background: var(--bg-neutral); border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
-        table tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); color: var(--ink-muted); vertical-align: middle; }
-        table tbody tr:last-child td { border-bottom: none; }
-        table tbody tr:hover { background: var(--bg-neutral); }
-        table tbody td .name-cell { font-weight: 600; color: var(--ink-black); }
-        table tbody td .mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-black); }
-
-        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; border: 1px solid transparent; }
-        .status-badge .icon { width: 14px; height: 14px; }
-        .status-badge.menunggu { background: var(--status-amber-bg); color: var(--status-amber); border-color: rgba(180, 83, 9, 0.1); }
-        .status-badge.diverifikasi { background: var(--status-teal-bg); color: var(--status-teal); border-color: rgba(15, 118, 110, 0.1); }
-        .status-badge.proses { background: var(--status-teal-bg); color: var(--status-teal); border-color: rgba(15, 118, 110, 0.1); }
-        .status-badge.selesai { background: var(--status-green-bg); color: var(--status-green); border-color: rgba(21, 128, 61, 0.1); }
-        .status-badge.ditolak { background: var(--status-red-bg); color: var(--status-red); border-color: rgba(185, 28, 28, 0.1); }
-
-        .btn-sm { display: inline-flex; align-items: center; gap: 4px; padding: 4px 14px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 600; border: none; border-radius: var(--radius-pill); cursor: pointer; transition: all 0.2s ease; min-height: 32px; }
-        .btn-sm .icon { width: 14px; height: 14px; }
-        .btn-sm-outline { background: transparent; color: var(--navy-brand); border: 1px solid var(--border-subtle); }
-        .btn-sm-outline:hover { background: var(--navy-brand-light); border-color: var(--navy-brand); }
-
-        .empty-state { text-align: center; padding: var(--sp-64) var(--sp-24); color: var(--ink-muted); }
-        .empty-state .empty-icon { width: 56px; height: 56px; color: var(--border-subtle); margin-bottom: var(--sp-16); }
-        .empty-state h3 { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--ink-black); margin-bottom: var(--sp-8); }
-        .empty-state p { font-size: 14px; margin-bottom: var(--sp-16); }
-        .empty-state .btn-primary-sm { display: inline-flex; }
-
-        @media (max-width: 768px) {
-          .page-title { font-size: 26px; }
-          .toolbar { flex-direction: column; align-items: stretch; padding: var(--sp-16); }
-          .toolbar-left { flex-direction: column; align-items: stretch; }
-          .search-wrapper { min-width: unset; }
-          .btn-primary-sm { width: 100%; justify-content: center; }
-          .table-wrapper { padding: 0 var(--sp-16) var(--sp-16) var(--sp-16); }
-          table thead th, table tbody td { padding: 8px 10px; font-size: 12px; }
-        }
-      `}</style>
-
-      <div className="hero-row">
-        <p className="page-eyebrow">Laporan Kendala</p>
-        <h1 className="page-title">Monitoring Laporan</h1>
-        <p className="page-sub">Pantau status laporan kendala yang sudah Anda ajukan.</p>
+      <div className="mb-8">
+        <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-gold mb-2">Laporan Saya</p>
+        <h1 className="font-grotesk text-[32px] font-bold text-text-primary tracking-tight leading-tight mb-2">Monitoring Laporan</h1>
+        <p className="text-[14.5px] text-text-muted">Pantau status laporan kendala yang Anda buat.</p>
+        <div className="flex gap-8 mt-4">
+          <div><span className="text-xl font-bold text-text-primary">{stats.semua}</span><span className="text-xs text-text-muted ml-1">Semua</span></div>
+          <div><span className="text-xl font-bold text-warning">{stats.menunggu}</span><span className="text-xs text-text-muted ml-1">Menunggu</span></div>
+          <div><span className="text-xl font-bold text-teal">{stats.proses}</span><span className="text-xs text-text-muted ml-1">Diproses</span></div>
+          <div><span className="text-xl font-bold text-success">{stats.selesai}</span><span className="text-xs text-text-muted ml-1">Selesai</span></div>
+        </div>
       </div>
 
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <div className="search-wrapper">
-            <svg className="icon search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" /></svg>
-            <input type="text" id="searchInput" placeholder="Cari laporan..." />
+      <div className="bg-bg-card rounded-[20px] border border-border-subtle shadow-lux p-4 px-6 flex items-center justify-between gap-4 flex-wrap mb-8">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="flex-1 min-w-[200px] relative">
+            <svg className="icon absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" /></svg>
+            <input type="text" placeholder="Cari kategori..." value={search} onChange={e => setSearch(e.target.value)} className="w-full py-2 pl-[38px] pr-3 font-sans text-[13.5px] bg-bg border border-border-subtle rounded-full outline-none h-[38px]" />
           </div>
-          <div className="filter-group">
-            <label htmlFor="statusFilter">Status</label>
-            <select id="statusFilter">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-text-muted uppercase">Status</label>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-1.5 text-[13px] bg-bg border border-border-subtle rounded-full outline-none h-[38px]">
               <option value="all">Semua</option>
-              <option value="menunggu">Menunggu</option>
-              <option value="diverifikasi">Diverifikasi</option>
-              <option value="proses">Dalam Proses</option>
-              <option value="selesai">Selesai</option>
-              <option value="ditolak">Ditolak</option>
+              <option value="PENDING">Menunggu</option>
+              <option value="VERIFIED">Diverifikasi</option>
+              <option value="IN_PROGRESS">Dalam Proses</option>
+              <option value="COMPLETED">Selesai</option>
+              <option value="REJECTED">Ditolak</option>
             </select>
           </div>
-          <span className="badge-count" id="rowCount">3 laporan</span>
+          <span className="text-xs font-semibold text-text-muted bg-bg px-3.5 py-1 rounded-full border border-border-subtle">{filtered.length} laporan</span>
         </div>
-        <Link to="/buat-laporan" className="btn-primary-sm">
-          <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-          Buat Laporan
-        </Link>
+        <Link to="/buat-laporan" className="inline-flex items-center gap-2 px-5 py-2 text-[13px] font-semibold bg-primary text-white rounded-full">+ Buat Laporan</Link>
       </div>
 
-      <div className="table-container">
-        <div className="table-header">
-          <h3>Daftar Laporan Saya</h3>
-          <span style={{ fontSize: "12px", color: "var(--ink-subtle)" }}>Total: 3 laporan</span>
+      <div className="bg-bg-card rounded-[20px] border border-border-subtle shadow-lux overflow-hidden">
+        <div className="px-6 py-5 border-b border-border-subtle flex items-center justify-between">
+          <h3 className="font-grotesk text-base font-bold text-text-primary">Daftar Laporan</h3>
+          <span className="text-xs text-text-muted">Total: {filtered.length} laporan</span>
         </div>
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>No</th>
-                <th>Kategori</th>
-                <th>Deskripsi</th>
-                <th>Tanggal Lapor</th>
-                <th>Status</th>
-                <th style={{ textAlign: "right" }}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody" />
+        <div className="overflow-x-auto px-6 pb-6">
+          <table className="w-full border-collapse text-[14px]">
+            <thead><tr>
+              <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-muted bg-bg border-b border-border-subtle">No</th>
+              <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-muted bg-bg border-b border-border-subtle">Kategori</th>
+              <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-muted bg-bg border-b border-border-subtle">Tanggal</th>
+              <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-muted bg-bg border-b border-border-subtle">Status</th>
+              <th className="text-right px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-muted bg-bg border-b border-border-subtle">Aksi</th>
+            </tr></thead>
+            <tbody>
+              {loading ? <tr><td colSpan="5" className="text-center py-12 text-text-muted">Memuat data...</td></tr> :
+              filtered.length === 0 ? <tr><td colSpan="5" className="text-center py-12 text-text-muted">Tidak ada laporan.</td></tr> :
+              filtered.map((i, idx) => (
+                <tr key={i.id} className="hover:bg-bg">
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted">{idx + 1}</td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted"><span className="font-semibold text-text-primary">{i.kategori_kendala}</span></td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted"><span className="font-mono text-xs text-text-primary">{formatDate(i.tanggal_lapor)}</span></td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted"><span className={`status-badge ${statusClass[i.status_laporan]}`}>{labels[i.status_laporan]}</span></td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-right"><button className="text-primary text-xs font-semibold hover:underline border-none bg-none cursor-pointer" onClick={() => navigate('/detail-laporan/' + i.id)}>Detail</button></td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       </div>
+
+      <style>{`
+        .status-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 12px; border-radius:99px; font-size:11px; font-weight:700; border:1px solid transparent; }
+        .status-badge.menunggu { background:var(--status-amber-bg); color:var(--status-amber); border-color:rgba(180,83,9,0.1); }
+        .status-badge.diverifikasi { background:var(--status-teal-bg); color:var(--status-teal); border-color:rgba(15,118,110,0.1); }
+        .status-badge.proses { background:var(--status-teal-bg); color:var(--status-teal); border-color:rgba(15,118,110,0.1); }
+        .status-badge.selesai { background:var(--status-green-bg); color:var(--status-green); border-color:rgba(21,128,61,0.1); }
+        .status-badge.ditolak { background:var(--status-red-bg); color:var(--status-red); border-color:rgba(185,28,28,0.1); }
+      `}</style>
     </DashboardLayout>
   )
 }

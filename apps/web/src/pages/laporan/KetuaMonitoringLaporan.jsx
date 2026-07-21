@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getIssuesApi } from "../../utils/mockApi"
+import { getIssues } from "../../api/issues.api"
 
 function formatDate(dateStr) {
   const parts = dateStr.split('-')
@@ -26,7 +26,10 @@ export default function KetuaMonitoringLaporan() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getIssuesApi().then(setData).finally(() => setLoading(false))
+    getIssues()
+      .then(res => setData(res.data))
+      .catch(err => console.error('Gagal memuat laporan:', err))
+      .finally(() => setLoading(false))
   }, [])
 
   const statusReverseMap = {

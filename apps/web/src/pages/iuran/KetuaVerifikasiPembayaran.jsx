@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getPaymentsApi, verifyPaymentApi } from "../../utils/mockApi"
+import { getAllPayments, verifyPayment } from "../../api/dues.api"
 
 function formatRupiah(angka) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(angka)
@@ -33,11 +33,11 @@ export default function KetuaVerifikasiPembayaran() {
   var [modalPayment, setModalPayment] = useState(null)
 
   useEffect(() => {
-    getPaymentsApi().then(setData).finally(() => setLoading(false))
+    getAllPayments().then(res => setData(res.data)).catch(err => console.error('Gagal memuat:', err)).finally(() => setLoading(false))
   }, [])
 
   const filtered = data.filter((p) => {
-    const matchSearch = p.warga.toLowerCase().includes(search.toLowerCase())
+    const matchSearch = p.nama_warga.toLowerCase().includes(search.toLowerCase())
     const filterMap = { menunggu: "PENDING", terverifikasi: "VERIFIED", ditolak: "REJECTED" }
     const matchStatus = statusFilter === "all" || p.status_verifikasi === (filterMap[statusFilter] || "")
     return matchSearch && matchStatus
@@ -49,16 +49,16 @@ export default function KetuaVerifikasiPembayaran() {
 
 
   function handleApprove(id) {
-    verifyPaymentApi(id, "VERIFIED").then(() => {
-      setData(prev => prev.map(p => p.id === id ? { ...p, status_verifikasi: "VERIFIED" } : p))
-      if (modalPayment?.id === id) setModalPayment(prev => prev ? { ...prev, status_verifikasi: "VERIFIED" } : null)
+    verifyPayment(id, "VERIFIED").then(() => {
+      setData(prev => prev.map(p => p.id_pembayaran_pembayaran === id ? { ...p, status_verifikasi: "VERIFIED" } : p))
+      if (modalPayment?.id_pembayaran === id) setModalPayment(prev => prev ? { ...prev, status_verifikasi: "VERIFIED" } : null)
     })
   }
 
   function handleReject(id) {
-    verifyPaymentApi(id, "REJECTED").then(() => {
-      setData(prev => prev.map(p => p.id === id ? { ...p, status_verifikasi: "REJECTED" } : p))
-      if (modalPayment?.id === id) setModalPayment(prev => prev ? { ...prev, status_verifikasi: "REJECTED" } : null)
+    verifyPayment(id, "REJECTED").then(() => {
+      setData(prev => prev.map(p => p.id_pembayaran_pembayaran === id ? { ...p, status_verifikasi: "REJECTED" } : p))
+      if (modalPayment?.id_pembayaran === id) setModalPayment(prev => prev ? { ...prev, status_verifikasi: "REJECTED" } : null)
     })
   }
 
@@ -191,13 +191,13 @@ export default function KetuaVerifikasiPembayaran() {
                 const statusBadge = badgeClass[p.status_verifikasi] || 'status-badge menunggu'
                 const statusLabel = badgeLabel[p.status_verifikasi] || 'Menunggu'
                 return (
-                  <tr key={p.id}>
+                  <tr key={p.id_pembayaran}>
                     <td>{i + 1}</td>
-                    <td><span className="name-cell">{p.warga}</span></td>
-                    <td>{p.iuran}</td>
+                    <td><span className="name-cell">{p.nama_warga}</span></td>
+                    <td>{p.nama_iuran}</td>
                     <td>{p.jenis_iuran}</td>
                     <td><span className="mono">{p.periode}</span></td>
-                    <td><span className="mono">{formatRupiah(p.nominal)}</span></td>
+                    <td><span className="mono">{formatRupiah(p.jumlah_bayar)}</span></td>
                     <td><span className="mono">{formatDate(p.tanggal_bayar)}</span></td>
                     <td><span className={statusBadge}>
                       <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

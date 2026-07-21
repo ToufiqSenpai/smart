@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getResidentsApi } from "../../utils/mockApi"
+import { getResidents } from "../../api/residents.api"
 
 export default function DataWarga() {
   var [search, setSearch] = useState('')
@@ -9,8 +9,10 @@ export default function DataWarga() {
   var [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    
-    getResidentsApi({ search, status: statusFilter }).then(setData).finally(() => setLoading(false))
+    getResidents({ search: search || undefined, status: statusFilter !== 'all' ? statusFilter : undefined })
+      .then(res => setData(res.data))
+      .catch(err => console.error('Gagal memuat data warga:', err))
+      .finally(() => setLoading(false))
   }, [search, statusFilter])
 
   return (
@@ -68,7 +70,7 @@ export default function DataWarga() {
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{w.nik}</td>
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6" style={{ fontWeight: 600, color: "var(--ink-black)" }}>{w.nama}</td>
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{w.alamat}</td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{w.noHp}</td>
+                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{w.no_hp}</td>
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">
                       <span className={"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap " + (w.statusKeanggotaan === 'AKTIF' ? 'bg-success-bg text-success border border-success/10' : 'bg-warning-bg text-warning border border-warning/10')}>{w.statusKeanggotaan === 'AKTIF' ? 'Aktif' : 'Menunggu'}</span>
                     </td>

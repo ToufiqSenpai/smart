@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getBusinessesApi } from "../../utils/mockApi"
+import { getBusinesses, validateBusiness } from "../../api/businesses.api"
 
 const statusClass = {
   VERIFIED: "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border bg-success-bg text-success border-success/10",
@@ -18,10 +18,38 @@ export default function KetuaValidasiUMKM() {
   var [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getBusinessesApi({ keyword: search, status: statusFilter }).then(setData).finally(() => setLoading(false))
+    getBusinesses({ keyword: search || undefined })
+      .then(res => {
+        const all = res.data
+        setData(statusFilter !== 'all' ? all.filter(u => u.status_verifikasi === statusFilter) : all)
+      })
+      .catch(err => console.error('Gagal memuat UMKM:', err))
+      .finally(() => setLoading(false))
   }, [search, statusFilter])
 
   const pendingCount = data.filter(u => u.status_verifikasi === 'PENDING').length
+
+  const refresh = () => {
+    getBusinesses({ keyword: search || undefined })
+      .then(res => {
+        const all = res.data
+        setData(statusFilter !== 'all' ? all.filter(u => u.status_verifikasi === statusFilter) : all)
+      })
+  }
+
+  const handleVerifikasi = (id, namaUsaha, pemilik) => {
+    if (!confirm(`Validasi UMKM "${namaUsaha}" milik ${pemilik}?`)) return
+    validateBusiness(id, { status: 'VERIFIED' })
+      .then(() => refresh())
+      .catch(err => console.error('Gagal verifikasi:', err))
+  }
+
+  const handleTolak = (id, namaUsaha, pemilik) => {
+    if (!confirm(`Tolak UMKM "${namaUsaha}" milik ${pemilik}?`)) return
+    validateBusiness(id, { status: 'REJECTED' })
+      .then(() => refresh())
+      .catch(err => console.error('Gagal menolak:', err))
+  }
 
   return (
     <DashboardLayout>
@@ -83,8 +111,8 @@ export default function KetuaValidasiUMKM() {
                     <div className="flex items-center gap-2 justify-end">
                       {u.status_verifikasi === "PENDING" ? (
                         <>
-                          <button className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-semibold transition-all font-sans whitespace-nowrap hover:brightness-90 border-none cursor-pointer bg-primary text-white" style={{ background: "var(--status-green)", padding: "6px 14px", fontSize: "12px" }}>Verifikasi</button>
-                          <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all font-sans whitespace-nowrap bg-transparent border cursor-pointer" style={{ borderColor: "var(--status-red)", color: "var(--status-red)", padding: "6px 14px", fontSize: "12px" }}>Tolak</button>
+                          <button className="inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-semibold transition-all font-sans whitespace-nowrap hover:brightness-90 border-none cursor-pointer bg-primary text-white" style={{ background: "var(--status-green)", padding: "6px 14px", fontSize: "12px" }} onClick={() => handleVerifikasi(u.id, u.nama_usaha, u.pemilik)}>Verifikasi</button>
+                          <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all font-sans whitespace-nowrap bg-transparent border cursor-pointer" style={{ borderColor: "var(--status-red)", color: "var(--status-red)", padding: "6px 14px", fontSize: "12px" }} onClick={() => handleTolak(u.id, u.nama_usaha, u.pemilik)}>Tolak</button>
                         </>
                       ) : (
                         <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-all font-sans whitespace-nowrap bg-transparent text-primary border border-border-subtle hover:bg-primary-light hover:border-primary cursor-pointer" style={{ padding: "6px 14px", fontSize: "12px" }} onClick={() => navigate('/detail-validasi-umkm/' + u.id)}>Detail</button>

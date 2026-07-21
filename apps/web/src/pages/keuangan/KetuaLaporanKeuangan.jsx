@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getFinanceReportApi } from "../../utils/mockApi"
+import { getFinanceReport } from "../../api/finance.api"
 
 function formatRupiah(angka) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(angka)
@@ -19,7 +19,7 @@ export default function KetuaLaporanKeuangan() {
 
   useEffect(() => {
     
-    getFinanceReportApi(periode).then(setReport).finally(() => setLoading(false))
+    getFinanceReport({ periode }).then(res => setReport(res.data)).catch(err => console.error('Gagal:', err)).finally(() => setLoading(false))
   }, [periode])
 
   if (loading || !report) {

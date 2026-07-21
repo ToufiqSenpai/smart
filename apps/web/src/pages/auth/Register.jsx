@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { register } from '../../api/auth.api'
 
 const ICONS = {
   eye: (
@@ -88,6 +89,7 @@ export default function Register() {
 
   const [form, setForm] = useState({
     nik: "",
+    email: "",
     nama: "",
     alamat: "",
     noHp: "",
@@ -119,6 +121,7 @@ export default function Register() {
   const validate = () => {
     const newErrors = {}
     if (!/^\d{16}$/.test(form.nik)) newErrors.nik = "NIK harus 16 digit angka"
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = "Email tidak valid"
     if (!form.nama.trim()) newErrors.nama = "Nama lengkap harus diisi"
     if (!form.alamat.trim()) newErrors.alamat = "Alamat harus diisi"
     if (!form.noHp.trim()) newErrors.noHp = "No. HP harus diisi"
@@ -129,19 +132,31 @@ export default function Register() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setErrors({})
     if (!validate()) return
 
     setLoading(true)
-
-    setTimeout(() => {
+    try {
+      await register({
+        nik: form.nik,
+        email: form.email,
+        nama: form.nama,
+        alamat: form.alamat,
+        noHp: form.noHp,
+        username: form.username,
+        password: form.password,
+      })
       addToast("success", "Pendaftaran berhasil!", "Data Anda telah dikirim. Tunggu verifikasi dari Ketua RT.")
-      setForm({ nik: "", nama: "", alamat: "", noHp: "", username: "", password: "", passwordConfirm: "" })
-      setLoading(false)
+      setForm({ nik: "", email: "", nama: "", alamat: "", noHp: "", username: "", password: "", passwordConfirm: "" })
       setTimeout(() => navigate("/login"), 2500)
-    }, 1200)
+    } catch (err) {
+      const msg = err?.message || "Gagal mendaftar, coba lagi."
+      addToast("error", "Gagal mendaftar", msg)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleNikChange = (e) => {
@@ -446,6 +461,23 @@ export default function Register() {
                   <span>NIK harus 16 digit angka</span>
                 </div>
                 <div className="helper-text">Contoh: 3171020101900001</div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="email">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  className={`form-control${errors.email ? " error" : ""}`}
+                  placeholder="contoh@email.com"
+                  required
+                  value={form.email}
+                  onChange={(e) => updateField("email", e.target.value)}
+                />
+                <div className={`error-text${errors.email ? " show" : ""}`}>
+                  {ICONS.error}
+                  <span>Email tidak valid</span>
+                </div>
               </div>
 
               <div className="form-group">

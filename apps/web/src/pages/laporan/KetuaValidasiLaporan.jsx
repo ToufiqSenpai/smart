@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getIssuesApi } from "../../utils/mockApi"
+import { getIssues } from "../../api/issues.api"
 
 function formatDate(dateStr) {
   const parts = dateStr.split('-')
@@ -29,12 +29,23 @@ export default function KetuaValidasiLaporan() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getIssuesApi().then(setData).finally(() => setLoading(false))
+    getIssues()
+      .then(res => setData(res.data))
+      .catch(err => console.error('Gagal memuat laporan:', err))
+      .finally(() => setLoading(false))
   }, [])
+
+  const statusFilterMap = {
+    menunggu: 'PENDING',
+    diverifikasi: 'VERIFIED',
+    proses: 'IN_PROGRESS',
+    selesai: 'COMPLETED',
+    ditolak: 'REJECTED',
+  }
 
   const filtered = data.filter((item) => {
     const matchSearch = item.kategori_kendala.toLowerCase().includes(search.toLowerCase()) || item.pelapor.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === "all" || statusFilter === (statusMap[item.status_laporan] || {}).class
+    const matchStatus = statusFilter === "all" || statusFilterMap[statusFilter] === item.status_laporan
     return matchSearch && matchStatus
   })
 

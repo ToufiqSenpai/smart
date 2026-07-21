@@ -48,7 +48,7 @@ export default function KetuaTambahUMKM() {
           <p>Daftarkan usaha mikro kecil menengah baru untuk warga RT 08.</p>
         </div>
 
-        <form id="umkmForm" noValidate>
+        <form id="umkmForm" noValidate onSubmit={(e) => { e.preventDefault(); alert('Fitur tambah UMKM oleh Ketua belum tersedia. Gunakan akun warga.'); }}>
           <div className="form-group">
             <label htmlFor="namaUsaha">Nama Usaha</label>
             <input type="text" className="form-control" id="namaUsaha" placeholder="Contoh: Warung Makan Sejahtera" required />

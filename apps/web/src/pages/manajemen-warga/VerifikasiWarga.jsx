@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getPendingVerificationsApi, verifyResidentApi } from "../../utils/mockApi"
+import { getPendingVerifications, verifyResident } from "../../api/residents.api"
 
 export default function VerifikasiWarga() {
   var [search, setSearch] = useState('')
@@ -8,7 +8,10 @@ export default function VerifikasiWarga() {
   var [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getPendingVerificationsApi().then(setData).finally(() => setLoading(false))
+    getPendingVerifications()
+      .then(res => setData(res.data))
+      .catch(err => console.error('Gagal memuat data verifikasi:', err))
+      .finally(() => setLoading(false))
   }, [])
 
   var filteredData = data.filter(function(w) {
@@ -16,11 +19,13 @@ export default function VerifikasiWarga() {
   })
 
   function handleVerifikasi(id) {
-    verifyResidentApi(id, "AKTIF").then(() => getPendingVerificationsApi().then(setData))
+    verifyResident(id, { status: 'AKTIF' })
+      .then(() => getPendingVerifications().then(res => setData(res.data)))
   }
 
   function handleTolak(id) {
-    verifyResidentApi(id, "DITOLAK").then(() => getPendingVerificationsApi().then(setData))
+    verifyResident(id, { status: 'DITOLAK' })
+      .then(() => getPendingVerifications().then(res => setData(res.data)))
   }
 
   return (

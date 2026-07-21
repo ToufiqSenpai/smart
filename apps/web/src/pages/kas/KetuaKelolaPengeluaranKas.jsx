@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getExpensesApi } from "../../utils/mockApi"
+import { getExpenses } from "../../api/finance.api"
 
 function formatRupiah(angka) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(angka)
@@ -21,7 +21,7 @@ export default function KetuaKelolaPengeluaranKas() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getExpensesApi().then(setData).finally(() => setLoading(false))
+    getExpenses().then(res => setData(res.data)).catch(err => console.error('Gagal memuat:', err)).finally(() => setLoading(false))
   }, [])
 
   const filtered = data.filter((item) => {

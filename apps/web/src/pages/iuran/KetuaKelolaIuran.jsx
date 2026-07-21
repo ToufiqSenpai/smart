@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getDuesApi } from "../../utils/mockApi"
+import { getDues } from "../../api/dues.api"
 
 function formatRupiah(angka) {
   return new Intl.NumberFormat('id-ID', {
@@ -24,7 +24,7 @@ export default function KetuaKelolaIuran() {
   var [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getDuesApi().then(setIuranData).finally(() => setLoading(false))
+    getDues().then(res => setIuranData(res.data)).catch(err => console.error('Gagal memuat iuran:', err)).finally(() => setLoading(false))
   }, [])
 
   return (

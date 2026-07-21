@@ -9,7 +9,11 @@ import TaskGrid from "../../components/dashboard/TaskGrid"
 import AnnouncementList from "../../components/dashboard/AnnouncementList"
 import ActivitySection from "../../components/dashboard/ActivitySection"
 import * as Icons from "../../components/ui/Icons"
-import { getDashboardApi, getAnnouncementsApi, getDashboardActivitiesApi, getPendingVerificationsApi, getBillsApi, getMyBusinessesApi } from "../../utils/mockApi"
+import { getDashboard, getDashboardActivities } from "../../api/dashboard.api"
+import { getAnnouncements } from "../../api/announcements.api"
+import { getPendingVerifications } from "../../api/residents.api"
+import { getCurrentBills } from "../../api/dues.api"
+import { getMyBusinesses } from "../../api/businesses.api"
 
 function generateInitials(nama) {
   return nama.split(" ").map(k => k.charAt(0).toUpperCase()).slice(0, 2).join("")
@@ -56,11 +60,11 @@ function mapActivity(a) {
   }
 }
 
-function WargaSection({ dashboard, announcements, activities, bills, myBusinesses }) {
-  const profil = dashboard?.profil || { nama: '', statusKeanggotaan: '' }
+function WargaSection({ user, dashboard, announcements, activities, bills, myBusinesses }) {
+  const nama = user?.nama || ''
   return (
     <>
-      <WelcomeBanner initials={generateInitials(profil.nama)} name={profil.nama} roleBadge="Warga" subtitle="Berikut ringkasan aktivitas dan layanan Anda hari ini." />
+      <WelcomeBanner initials={generateInitials(nama)} name={nama} roleBadge="Warga" subtitle="Berikut ringkasan aktivitas dan layanan Anda hari ini." />
       <div className="mb-8" />
       <StatsGrid stats={[
         { number: String(dashboard?.jumlahUMKM || 0), label: "UMKM Saya", meta: `${dashboard?.jumlahUMKM || 0} usaha terdaftar`, icon: <Icons.TrendingUp className="w-5 h-5" /> },
@@ -98,10 +102,12 @@ function WargaSection({ dashboard, announcements, activities, bills, myBusinesse
   )
 }
 
-function PengurusSection({ dashboard, announcements, activities, bills, myBusinesses, residentDashboard }) {
+function PengurusSection({ user, dashboard, announcements, activities, bills, myBusinesses }) {
+  const nama = user?.nama || ''
+  const jabatan = user?.jabatan || 'Pengurus'
   return (
     <>
-      <WelcomeBanner initials="AS" name="Agus Saputra" roleBadge="Sekretaris" roleBadgeColor="teal" subtitle="Berikut ringkasan data dan aktivitas RT 08." />
+      <WelcomeBanner initials={generateInitials(nama)} name={nama} roleBadge={jabatan} roleBadgeColor="teal" subtitle="Berikut ringkasan data dan aktivitas RT 08." />
       <div className="mb-8" />
       <StatsGrid stats={[
         { number: String(dashboard?.totalWarga || 0), label: "Total Warga", meta: `${dashboard?.totalWarga || 0} warga`, icon: <Icons.Users className="w-5 h-5" /> },
@@ -141,9 +147,9 @@ function PengurusSection({ dashboard, announcements, activities, bills, myBusine
       ]} />
       <SectionDivider icon={Icons.Users} label="Sebagai Warga" />
       <StatsGrid stats={[
-        { number: String(residentDashboard?.jumlahUMKM || 0), label: "UMKM Saya", meta: `${residentDashboard?.jumlahUMKM || 0} usaha terdaftar`, icon: <Icons.TrendingUp className="w-5 h-5" /> },
-        { number: String(residentDashboard?.jumlahTagihanBelumDibayar || 0), label: "Tagihan Belum Dibayar", meta: "Perlu tindakan Anda", accent: "bg-warning/10 text-warning", icon: <Icons.Clock className="w-5 h-5" /> },
-        { number: String(residentDashboard?.jumlahLaporanSaya || 0), label: "Laporan Kendala Saya", meta: `${residentDashboard?.jumlahLaporanSaya || 0} laporan`, icon: <Icons.FileText className="w-5 h-5" /> },
+        { number: String(myBusinesses?.length || 0), label: "UMKM Saya", meta: `${myBusinesses?.length || 0} usaha terdaftar`, icon: <Icons.TrendingUp className="w-5 h-5" /> },
+        { number: String(bills?.filter(b => b.status !== 'VERIFIED').length || 0), label: "Tagihan Belum Dibayar", meta: "Perlu tindakan Anda", accent: "bg-warning/10 text-warning", icon: <Icons.Clock className="w-5 h-5" /> },
+        { number: "0", label: "Laporan Kendala Saya", meta: "0 laporan", icon: <Icons.FileText className="w-5 h-5" /> },
       ]} />
       <div className="mb-8" />
       <BentoGrid sections={[
@@ -176,10 +182,12 @@ function PengurusSection({ dashboard, announcements, activities, bills, myBusine
   )
 }
 
-function KetuaSection({ dashboard, announcements, activities, pendingWarga, bills, myBusinesses, residentDashboard }) {
+function KetuaSection({ user, dashboard, announcements, activities, pendingWarga, bills, myBusinesses }) {
+  const nama = user?.nama || ''
+  const jabatan = user?.jabatan || 'Ketua RT'
   return (
     <>
-      <WelcomeBanner initials="BS" name="Budi Santoso" roleBadge="Ketua RT" subtitle="Berikut ringkasan data dan aktivitas RT 08." />
+      <WelcomeBanner initials={generateInitials(nama)} name={nama} roleBadge={jabatan} subtitle="Berikut ringkasan data dan aktivitas RT 08." />
       <div className="mb-8" />
       <StatsGrid stats={[
         { number: String(dashboard?.wargaMenungguVerifikasi || dashboard?.pendingCounts?.wargaMenungguVerifikasi || 0), label: "Warga Menunggu Verifikasi", meta: "Perlu tindakan segera", accent: "bg-warning/10 text-warning", icon: <Icons.Users className="w-5 h-5" /> },
@@ -219,9 +227,9 @@ function KetuaSection({ dashboard, announcements, activities, pendingWarga, bill
       ]} />
       <SectionDivider icon={Icons.Users} label="Sebagai Warga" />
       <StatsGrid stats={[
-        { number: String(residentDashboard?.jumlahUMKM || 0), label: "UMKM Saya", meta: `${residentDashboard?.jumlahUMKM || 0} usaha terdaftar`, icon: <Icons.TrendingUp className="w-5 h-5" /> },
-        { number: String(residentDashboard?.jumlahTagihanBelumDibayar || 0), label: "Tagihan Belum Dibayar", meta: "Perlu tindakan Anda", accent: "bg-warning/10 text-warning", icon: <Icons.Clock className="w-5 h-5" /> },
-        { number: String(residentDashboard?.jumlahLaporanSaya || 0), label: "Laporan Kendala Saya", meta: `${residentDashboard?.jumlahLaporanSaya || 0} laporan`, icon: <Icons.FileText className="w-5 h-5" /> },
+        { number: String(myBusinesses?.length || 0), label: "UMKM Saya", meta: `${myBusinesses?.length || 0} usaha terdaftar`, icon: <Icons.TrendingUp className="w-5 h-5" /> },
+        { number: String(bills?.filter(b => b.status !== 'VERIFIED').length || 0), label: "Tagihan Belum Dibayar", meta: "Perlu tindakan Anda", accent: "bg-warning/10 text-warning", icon: <Icons.Clock className="w-5 h-5" /> },
+        { number: "0", label: "Laporan Kendala Saya", meta: "0 laporan", icon: <Icons.FileText className="w-5 h-5" /> },
       ]} />
       <div className="mb-8" />
       <BentoGrid sections={[
@@ -264,42 +272,39 @@ export default function Dashboard() {
   const [pendingWarga, setPendingWarga] = useState([])
   const [bills, setBills] = useState([])
   const [myBusinesses, setMyBusinesses] = useState([])
-  const [residentDashboard, setResidentDashboard] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
       try {
         const [dash, anns, acts] = await Promise.all([
-          getDashboardApi(role, userId),
-          getAnnouncementsApi(),
-          getDashboardActivitiesApi(),
+          getDashboard(),
+          getAnnouncements(),
+          getDashboardActivities(),
         ])
-        setDashboard(dash)
-        setAnnouncements(anns)
-        setActivities(acts)
+        setDashboard(dash.data)
+        setAnnouncements(anns.data)
+        setActivities(acts.data)
 
         if (role === "CHAIRPERSON") {
-          const pw = await getPendingVerificationsApi()
-          setPendingWarga(pw)
+          const pw = await getPendingVerifications()
+          setPendingWarga(pw.data)
         }
 
         if (role === "CHAIRPERSON" || role === "OFFICER") {
-          const [rd, bl, mb] = await Promise.all([
-            getDashboardApi("RESIDENT", userId),
-            getBillsApi(userId),
-            getMyBusinessesApi(userId),
+          const [bl, mb] = await Promise.all([
+            getCurrentBills(),
+            getMyBusinesses(),
           ])
-          setResidentDashboard(rd)
-          setBills(bl)
-          setMyBusinesses(mb)
+          setBills(bl.data)
+          setMyBusinesses(mb.data)
         } else {
           const [bl, mb] = await Promise.all([
-            getBillsApi(userId),
-            getMyBusinessesApi(userId),
+            getCurrentBills(),
+            getMyBusinesses(),
           ])
-          setBills(bl)
-          setMyBusinesses(mb)
+          setBills(bl.data)
+          setMyBusinesses(mb.data)
         }
       } catch (e) {
         console.error(e)
@@ -317,8 +322,8 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       {role === "RESIDENT" && <WargaSection dashboard={dashboard} announcements={announcements} activities={activities} bills={bills} myBusinesses={myBusinesses} />}
-      {role === "OFFICER" && <PengurusSection dashboard={dashboard} announcements={announcements} activities={activities} bills={bills} myBusinesses={myBusinesses} residentDashboard={residentDashboard} />}
-      {role === "CHAIRPERSON" && <KetuaSection dashboard={dashboard} announcements={announcements} activities={activities} pendingWarga={pendingWarga} bills={bills} myBusinesses={myBusinesses} residentDashboard={residentDashboard} />}
+      {role === "OFFICER" && <PengurusSection user={user} dashboard={dashboard} announcements={announcements} activities={activities} bills={bills} myBusinesses={myBusinesses} />}
+      {role === "CHAIRPERSON" && <KetuaSection user={user} dashboard={dashboard} announcements={announcements} activities={activities} pendingWarga={pendingWarga} bills={bills} myBusinesses={myBusinesses} />}
     </DashboardLayout>
   )
 }

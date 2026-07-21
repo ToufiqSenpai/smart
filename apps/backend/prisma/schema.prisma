@@ -159,8 +159,8 @@ model Umkm {
   idUmkm           String   @id @default(uuid()) @map("id_umkm") @db.VarChar(36)
   idWarga          String   @map("id_warga") @db.VarChar(36)
   idPengurus       String?  @map("id_pengurus") @db.VarChar(36)
-  namaUsaha        String   @map("nama_usaha") @db.VarChar(15)
-  jenisUsaha       String   @map("jenis_usaha") @db.VarChar(10)
+  namaUsaha        String   @map("nama_usaha") @db.VarChar(200)
+  jenisUsaha       String   @map("jenis_usaha") @db.VarChar(50)
   deskripsiUsaha   String   @map("deskripsi_usaha") @db.Text
   alamatUsaha      String   @map("alamat_usaha") @db.Text
   kontakUsaha      String   @map("kontak_usaha") @db.VarChar(15)

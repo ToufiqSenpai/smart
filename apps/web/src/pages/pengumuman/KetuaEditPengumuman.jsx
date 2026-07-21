@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import { getAnnouncementById, updateAnnouncement } from "../../api/announcements.api"
 
 const ICONS = {
   check: (
@@ -34,12 +35,28 @@ function Toast({ type, title, message, onClose }) {
 }
 
 export default function KetuaEditPengumuman() {
+  const { id } = useParams()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ judul: "Kerja Bakti RT 08", isi: "Kerja bakti...", status: "publik" })
+  const [form, setForm] = useState({ judul: "", isi: "", status: "" })
   const [errors, setErrors] = useState({})
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [file, setFile] = useState(null)
   const [toasts, setToasts] = useState([])
+
+  useEffect(() => {
+    getAnnouncementById(id)
+      .then(res => {
+        const d = res.data
+        setForm({
+          judul: d.judul || '',
+          isi: d.isi_pengumuman || '',
+          status: d.status_publikasi === 'PUBLISHED' ? 'publik' : 'draft',
+        })
+      })
+      .catch(() => addToast('error', 'Gagal memuat data', 'Pengumuman tidak ditemukan.'))
+      .finally(() => setLoading(false))
+  }, [id])
 
   const addToast = useCallback((type, title, message) => {
     const id = Date.now()
@@ -72,19 +89,27 @@ export default function KetuaEditPengumuman() {
     return newErrors
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const newErrors = validate()
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
 
-    setLoading(true)
-    setTimeout(() => {
-      const statusLabel = form.status === "publik" ? "Publik" : "Draft"
-      addToast("success", "Pengumuman diperbarui!", `"${form.judul}" berhasil diperbarui dengan status ${statusLabel}.`)
-      setLoading(false)
+    setSaving(true)
+    try {
+      await updateAnnouncement(id, {
+        judul: form.judul,
+        isi_pengumuman: form.isi,
+        status_publikasi: form.status === 'publik' ? 'PUBLISHED' : 'DRAFT',
+        lampiran: file ? file.name : undefined,
+      })
+      addToast("success", "Pengumuman diperbarui!", `"${form.judul}" berhasil diperbarui.`)
       setTimeout(() => navigate("/kelola-pengumuman"), 1500)
-    }, 1200)
+    } catch (err) {
+      addToast("error", "Gagal memperbarui", err?.message || "Terjadi kesalahan, coba lagi.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -159,8 +184,8 @@ export default function KetuaEditPengumuman() {
 
           <div className="flex gap-3 mt-8 pt-6 border-t border-border-subtle">
             <button type="button" className="inline-flex items-center justify-center gap-2 px-7 py-[10px] font-sans text-sm font-semibold border-none rounded-full cursor-pointer min-h-[44px] transition-all bg-bg-hover text-text-secondary border border-border-subtle" onClick={() => navigate("/kelola-pengumuman")}>Batal</button>
-            <button type="submit" className="inline-flex items-center justify-center gap-2 px-7 py-[10px] font-sans text-sm font-semibold border-none rounded-full cursor-pointer min-h-[44px] transition-all bg-primary text-white" id="submitBtn" disabled={loading}>
-              {loading ? (
+            <button type="submit" className="inline-flex items-center justify-center gap-2 px-7 py-[10px] font-sans text-sm font-semibold border-none rounded-full cursor-pointer min-h-[44px] transition-all bg-primary text-white" id="submitBtn" disabled={saving}>
+              {saving ? (
                 <>
                   <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
                   Menyimpan...

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getOfficersApi } from "../../utils/mockApi"
+import { getOfficers } from "../../api/residents.api"
 
 export default function KelolaPengurus() {
   var navigate = useNavigate()
@@ -10,7 +10,10 @@ export default function KelolaPengurus() {
   var [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getOfficersApi().then(setData).finally(() => setLoading(false))
+    getOfficers()
+      .then(res => setData(res.data))
+      .catch(err => console.error('Gagal memuat data pengurus:', err))
+      .finally(() => setLoading(false))
   }, [])
 
   var filteredData = data.filter(function(p) {

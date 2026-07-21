@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getPaymentByIdApi, verifyPaymentApi } from "../../utils/mockApi"
+import { getPaymentById, verifyPayment } from "../../api/dues.api"
 
 export default function KetuaDetailVerifikasi() {
   const { id } = useParams()
@@ -10,21 +10,24 @@ export default function KetuaDetailVerifikasi() {
 
   useEffect(() => {
     if (!id) return
-    getPaymentByIdApi(id).then((data) => {
-      // map mockApi fields to what the component expects
-      setPaymentData({
-        id: data.id,
-        warga: data.warga,
-        iuran: data.iuran,
-        jenis: data.jenis_iuran,
-        periode: data.periode,
-        nominal: data.nominal,
-        metode: data.metode_bayar,
-        tanggal: data.tanggal_bayar,
-        status: data.status_verifikasi === "VERIFIED" ? "terverifikasi" : data.status_verifikasi === "REJECTED" ? "ditolak" : "menunggu",
-        bukti: data.bukti_pembayaran,
+    getPaymentById(id)
+      .then(res => {
+        const data = res.data
+        setPaymentData({
+          id: data.id_pembayaran,
+          warga: data.nama_warga,
+          iuran: data.nama_iuran,
+          jenis: data.jenis_iuran,
+          periode: data.periode,
+          nominal: data.jumlah_bayar,
+          metode: data.metode_bayar,
+          tanggal: data.tanggal_bayar,
+          status: data.status_verifikasi === "VERIFIED" ? "terverifikasi" : data.status_verifikasi === "REJECTED" ? "ditolak" : "menunggu",
+          bukti: data.bukti_pembayaran,
+        })
       })
-    }).finally(() => setLoading(false))
+      .catch(() => setPaymentData(null))
+      .finally(() => setLoading(false))
   }, [id])
 
   function formatRupiah(angka) {
@@ -56,14 +59,14 @@ export default function KetuaDetailVerifikasi() {
 
   function handleVerifikasi() {
     if (!paymentData) return
-    verifyPaymentApi(paymentData.id, "VERIFIED").then(() => {
+    verifyPayment(paymentData.id, "VERIFIED").then(() => {
       setPaymentData(prev => ({ ...prev, status: 'terverifikasi' }))
     })
   }
 
   function handleTolak() {
     if (!paymentData) return
-    verifyPaymentApi(paymentData.id, "REJECTED").then(() => {
+    verifyPayment(paymentData.id, "REJECTED").then(() => {
       setPaymentData(prev => ({ ...prev, status: 'ditolak' }))
     })
   }

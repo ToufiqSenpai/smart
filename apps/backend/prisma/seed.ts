@@ -46,7 +46,7 @@ async function main() {
 
   const ketuaRt = await prisma.pengurusRt.create({
     data: {
-      jabatan: "Ketua RT",
+      jabatan: "CHAIRPERSON",
       periodeJabatan: "2023 - 2026",
       idMasyarakat: masyarakatKetua.idMasyarakat,
     },
