@@ -44,7 +44,6 @@ function validateCreatePayload(payload: CreateExpenseBody) {
   if (!payload.tanggalKeluar || isNaN(Date.parse(payload.tanggalKeluar))) {
     errors.push("tanggalKeluar must be a valid date string (YYYY-MM-DD)");
   } else {
-    // Validate date is not in the future
     const inputDate = new Date(payload.tanggalKeluar);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
@@ -90,7 +89,6 @@ function validateUpdatePayload(payload: UpdateExpenseBody) {
     if (isNaN(Date.parse(payload.tanggalKeluar))) {
       errors.push("tanggalKeluar must be a valid date string (YYYY-MM-DD)");
     } else {
-      // Validate date is not in the future
       const inputDate = new Date(payload.tanggalKeluar);
       const today = new Date();
       today.setHours(23, 59, 59, 999);
@@ -118,7 +116,6 @@ function validateUpdatePayload(payload: UpdateExpenseBody) {
   }
 }
 
-// Get all expenses (accessible by OFFICER and CHAIRPERSON)
 export async function getExpenses(user: AuthUser) {
   if (
     !user.idPengurus ||
@@ -133,7 +130,6 @@ export async function getExpenses(user: AuthUser) {
   return financeRepository.findAll();
 }
 
-// Get specific expense by ID
 export async function getExpenseById(user: AuthUser, id: string) {
   if (
     !user.idPengurus ||
@@ -157,8 +153,7 @@ export async function getExpenseById(user: AuthUser, id: string) {
   return expense;
 }
 
-// Create expense (CHAIRPERSON only)
-export async function addExpense(user: AuthUser, payload: CreateExpenseBody) {
+export async function addExpense(user: AuthUser, rawBody: any) {
   if (user.role !== "CHAIRPERSON" || !user.idPengurus) {
     throw {
       status: 403,
@@ -167,11 +162,19 @@ export async function addExpense(user: AuthUser, payload: CreateExpenseBody) {
     };
   }
 
+  const payload: CreateExpenseBody = {
+    kategoriPengeluaran: rawBody.kategoriPengeluaran || rawBody.kategori_pengeluaran,
+    nominalPengeluaran: Number(rawBody.nominalPengeluaran !== undefined ? rawBody.nominalPengeluaran : rawBody.nominal_pengeluaran),
+    tanggalKeluar: rawBody.tanggalKeluar || rawBody.tanggal_keluar,
+    keterangan: rawBody.keterangan,
+    buktiNota: rawBody.buktiNota || rawBody.bukti_nota || null,
+  };
+
   validateCreatePayload(payload);
+
   return financeRepository.create(user.idPengurus, payload);
 }
 
-// Update expense (CHAIRPERSON only - must be original creator)
 export async function updateExpense(
   user: AuthUser,
   id: string,
@@ -194,7 +197,6 @@ export async function updateExpense(
     };
   }
 
-  // Verify that the current user created this expense
   if (existing.idPengurus !== user.idPengurus) {
     throw {
       status: 403,
@@ -208,7 +210,6 @@ export async function updateExpense(
   try {
     return await financeRepository.update(id, payload);
   } catch (err: any) {
-    // Race condition: data terhapus tepat setelah findById tapi sebelum update
     if (err.code === "P2025") {
       throw {
         status: 404,
@@ -220,7 +221,6 @@ export async function updateExpense(
   }
 }
 
-// Get finance report (income + expense summary)
 export async function getFinanceReport(user: AuthUser, periode?: string) {
   if (
     !user.idPengurus ||
@@ -254,7 +254,6 @@ export async function getFinanceReport(user: AuthUser, periode?: string) {
   };
 }
 
-// Delete expense (CHAIRPERSON only - must be original creator)
 export async function deleteExpense(user: AuthUser, id: string) {
   if (user.role !== "CHAIRPERSON" || !user.idPengurus) {
     throw {
@@ -273,7 +272,6 @@ export async function deleteExpense(user: AuthUser, id: string) {
     };
   }
 
-  // Verify that the current user created this expense
   if (existing.idPengurus !== user.idPengurus) {
     throw {
       status: 403,
