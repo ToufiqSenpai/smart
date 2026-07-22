@@ -40,16 +40,16 @@ router.patch(
 
 // ==================== BILLS (Tagihan) ====================
 
-// Get bills for current resident (must come before /payments)
-router.get("/bills/current", authenticate, authorize("RESIDENT"), getBills);
+// Get bills for current user's resident profile
+router.get("/bills/current", authenticate, getBills);
 
 // ==================== PAYMENTS (Pembayaran) ====================
 
-// Submit payment (resident only)
-router.post("/payments", authenticate, authorize("RESIDENT"), submitPayment);
+// Submit payment (any user with warga profile)
+router.post("/payments", authenticate, submitPayment);
 
-// Get payment history for current resident (must come before /payments/:paymentId)
-router.get("/me/payments", authenticate, authorize("RESIDENT"), getMyPayments);
+// Get payment history for current user's warga profile
+router.get("/me/payments", authenticate, getMyPayments);
 
 // Get all payments (officer and chairperson only)
 router.get(

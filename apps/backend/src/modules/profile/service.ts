@@ -12,10 +12,10 @@ export async function getProfile(user: AuthUser) {
     nik: masyarakat.nik,
     nama: masyarakat.nama,
     alamat: masyarakat.alamat,
-    no_hp: masyarakat.noHp,
+    noHp: masyarakat.noHp,
     username: masyarakat.username,
     role: user.role,
-    status_keanggotaan: masyarakat.warga?.statusKeanggotaan ?? null,
+    statusKeanggotaan: masyarakat.warga?.statusKeanggotaan ?? null,
   };
 }
 

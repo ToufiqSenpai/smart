@@ -109,10 +109,15 @@ export async function updateVerificationStatus(wargaId: string, status: string) 
 
 export async function findAllOfficers() {
   const data = await prisma.pengurusRt.findMany({
-    include: { masyarakat: true },
+    include: {
+      masyarakat: {
+        include: { warga: true },
+      },
+    },
   });
   return data.map((p: any) => ({
     id: p.idPengurus,
+    idWarga: p.masyarakat.warga?.idWarga ?? null,
     nama: p.masyarakat.nama,
     nik: p.masyarakat.nik,
     jabatan: p.jabatan,

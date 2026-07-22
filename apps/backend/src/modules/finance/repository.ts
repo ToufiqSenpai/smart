@@ -161,3 +161,60 @@ export async function deleteExpense(id: string) {
     where: { idPengeluaran: id },
   });
 }
+
+// Get finance report grouped by period
+export async function getReport(periode?: string) {
+  // Filter verified payments as income
+  const wherePembayaran: any = {
+    statusVerifikasi: "VERIFIED",
+  };
+
+  // Filter expenses
+  const wherePengeluaran: any = {};
+
+  if (periode && periode !== "all") {
+    const [year, month] = periode.split("-");
+    const startDate = new Date(Number(year), Number(month) - 1, 1);
+    const endDate = new Date(Number(year), Number(month), 0);
+
+    wherePembayaran.tanggalBayar = { gte: startDate, lte: endDate };
+    wherePengeluaran.tanggalKeluar = { gte: startDate, lte: endDate };
+  }
+
+  const [payments, expenses] = await Promise.all([
+    prisma.pembayaranIuran.findMany({
+      where: wherePembayaran,
+      include: {
+        warga: { include: { masyarakat: { select: { nama: true } } } },
+        iuran: { select: { namaIuran: true } },
+      },
+      orderBy: { tanggalBayar: "desc" },
+    }),
+    prisma.pengeluaranKas.findMany({
+      where: wherePengeluaran,
+      include: {
+        pengurus: {
+          include: { masyarakat: { select: { nama: true } } },
+        },
+      },
+      orderBy: { tanggalKeluar: "desc" },
+    }),
+  ]);
+
+  const pemasukan = payments.map((p: any) => ({
+    warga: p.warga?.masyarakat?.nama ?? "Warga",
+    iuran: p.iuran?.namaIuran ?? "Iuran",
+    periode: p.periode,
+    tanggal: p.tanggalBayar.toISOString().split("T")[0],
+    nominal: Number(p.jumlahBayar),
+  }));
+
+  const pengeluaran = expenses.map((e: any) => ({
+    kategori: e.kategoriPengeluaran,
+    keterangan: e.keterangan,
+    tanggal: e.tanggalKeluar.toISOString().split("T")[0],
+    nominal: Number(e.nominalPengeluaran),
+  }));
+
+  return { pemasukan, pengeluaran };
+}

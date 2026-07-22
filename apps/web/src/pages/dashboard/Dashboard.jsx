@@ -283,7 +283,8 @@ export default function Dashboard() {
           getDashboardActivities(),
         ])
         setDashboard(dash.data)
-        setAnnouncements(anns.data)
+        // Hanya tampilkan pengumuman yang PUBLISHED di dashboard
+        setAnnouncements((anns.data || []).filter(a => a.status_publikasi === 'PUBLISHED'))
         setActivities(acts.data)
 
         if (role === "CHAIRPERSON") {

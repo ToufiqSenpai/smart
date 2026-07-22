@@ -59,7 +59,7 @@ export default function TambahPengurus() {
             <label className="block text-[13px] font-semibold text-text-primary mb-1">Pilih Warga</label>
             <select className="w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-bg-card border border-border-subtle rounded-[14px] outline-none" value={selectedWarga} onChange={(e) => setSelectedWarga(e.target.value)}>
               <option value="">-- Pilih Warga --</option>
-              {wargalist.map(w => <option key={w.id} value={w.id}>{w.nama} - {w.nik}</option>)}
+              {wargaList.map(w => <option key={w.id} value={w.id}>{w.nama} - {w.nik}</option>)}
             </select>
           </div>
 

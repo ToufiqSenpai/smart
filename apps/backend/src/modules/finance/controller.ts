@@ -93,3 +93,16 @@ export async function deleteExpense(req: Request, res: Response) {
     });
   }
 }
+
+export async function getFinanceReport(req: Request, res: Response) {
+  try {
+    const periode = req.query.periode as string | undefined;
+    const data = await financeService.getFinanceReport(req.user!, periode);
+    res.json({ message: "success", data });
+  } catch (err: any) {
+    res.status(err.status || 500).json({
+      message: err.message || "Internal server error",
+      code: err.code,
+    });
+  }
+}

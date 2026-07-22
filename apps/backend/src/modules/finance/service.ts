@@ -220,6 +220,40 @@ export async function updateExpense(
   }
 }
 
+// Get finance report (income + expense summary)
+export async function getFinanceReport(user: AuthUser, periode?: string) {
+  if (
+    !user.idPengurus ||
+    (user.role !== "OFFICER" && user.role !== "CHAIRPERSON")
+  ) {
+    throw {
+      status: 403,
+      message: "You don't have permission to view finance report",
+      code: "FORBIDDEN",
+    };
+  }
+
+  const report = await financeRepository.getReport(periode);
+
+  const totalPemasukan = report.pemasukan.reduce(
+    (sum: number, p: any) => sum + Number(p.jumlah_bayar),
+    0,
+  );
+  const totalPengeluaran = report.pengeluaran.reduce(
+    (sum: number, p: any) => sum + Number(p.nominal_pengeluaran),
+    0,
+  );
+
+  return {
+    totalPemasukan,
+    totalPengeluaran,
+    saldoAkhir: totalPemasukan - totalPengeluaran,
+    jumlahTransaksi: report.pemasukan.length + report.pengeluaran.length,
+    pemasukan: report.pemasukan,
+    pengeluaran: report.pengeluaran,
+  };
+}
+
 // Delete expense (CHAIRPERSON only - must be original creator)
 export async function deleteExpense(user: AuthUser, id: string) {
   if (user.role !== "CHAIRPERSON" || !user.idPengurus) {

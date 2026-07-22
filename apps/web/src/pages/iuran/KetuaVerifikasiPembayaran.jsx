@@ -50,14 +50,14 @@ export default function KetuaVerifikasiPembayaran() {
 
   function handleApprove(id) {
     verifyPayment(id, "VERIFIED").then(() => {
-      setData(prev => prev.map(p => p.id_pembayaran_pembayaran === id ? { ...p, status_verifikasi: "VERIFIED" } : p))
+      setData(prev => prev.map(p => p.id_pembayaran === id ? { ...p, status_verifikasi: "VERIFIED" } : p))
       if (modalPayment?.id_pembayaran === id) setModalPayment(prev => prev ? { ...prev, status_verifikasi: "VERIFIED" } : null)
     })
   }
 
   function handleReject(id) {
     verifyPayment(id, "REJECTED").then(() => {
-      setData(prev => prev.map(p => p.id_pembayaran_pembayaran === id ? { ...p, status_verifikasi: "REJECTED" } : p))
+      setData(prev => prev.map(p => p.id_pembayaran === id ? { ...p, status_verifikasi: "REJECTED" } : p))
       if (modalPayment?.id_pembayaran === id) setModalPayment(prev => prev ? { ...prev, status_verifikasi: "REJECTED" } : null)
     })
   }
@@ -233,11 +233,11 @@ export default function KetuaVerifikasiPembayaran() {
               <div className="modal-body">
                 <div className="detail-row">
                   <span className="label">Nama Warga</span>
-                  <span className="value">{modalPayment.warga}</span>
+                  <span className="value">{modalPayment.nama_warga}</span>
                 </div>
                 <div className="detail-row">
                   <span className="label">Iuran</span>
-                  <span className="value">{modalPayment.iuran}</span>
+                  <span className="value">{modalPayment.nama_iuran}</span>
                 </div>
                 <div className="detail-row">
                   <span className="label">Jenis</span>
@@ -249,7 +249,7 @@ export default function KetuaVerifikasiPembayaran() {
                 </div>
                 <div className="detail-row">
                   <span className="label">Nominal</span>
-                  <span className="value mono">{formatRupiah(modalPayment.nominal)}</span>
+                  <span className="value mono">{formatRupiah(modalPayment.jumlah_bayar)}</span>
                 </div>
                 <div className="detail-row">
                   <span className="label">Metode Bayar</span>
@@ -281,8 +281,8 @@ export default function KetuaVerifikasiPembayaran() {
                 <button className="btn btn-secondary" onClick={() => setModalPayment(null)}>Tutup</button>
                 {modalPayment.status_verifikasi === "PENDING" && (
                   <>
-                    <button className="btn btn-danger" onClick={() => handleReject(modalPayment.id)}>Tolak</button>
-                    <button className="btn btn-success" onClick={() => handleApprove(modalPayment.id)}>Verifikasi</button>
+                    <button className="btn btn-danger" onClick={() => handleReject(modalPayment.id_pembayaran)}>Tolak</button>
+                    <button className="btn btn-success" onClick={() => handleApprove(modalPayment.id_pembayaran)}>Verifikasi</button>
                   </>
                 )}
               </div>

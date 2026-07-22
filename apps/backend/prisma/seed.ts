@@ -52,10 +52,26 @@ async function main() {
     },
   });
 
+  // Ketua RT juga sebagai warga (biar bisa lihat tagihan & bayar iuran)
+  await prisma.warga.create({
+    data: {
+      statusKeanggotaan: "AKTIF",
+      idMasyarakat: masyarakatKetua.idMasyarakat,
+    },
+  });
+
   const sekretarisRt = await prisma.pengurusRt.create({
     data: {
       jabatan: "Sekretaris RT",
       periodeJabatan: "2023 - 2026",
+      idMasyarakat: masyarakatSekretaris.idMasyarakat,
+    },
+  });
+
+  // Sekretaris juga sebagai warga
+  await prisma.warga.create({
+    data: {
+      statusKeanggotaan: "AKTIF",
       idMasyarakat: masyarakatSekretaris.idMasyarakat,
     },
   });
@@ -144,6 +160,7 @@ async function main() {
   const iuranKebersihan = await prisma.iuran.create({
     data: {
       namaIuran: "Iuran Kebersihan Lingkungan",
+      jenisIuran: "Kebersihan",
       nominal: 25000.0,
       tanggalJatuhTempo: new Date("2025-01-10"),
       statusAktif: true,
@@ -154,6 +171,7 @@ async function main() {
   const iuranKeamanan = await prisma.iuran.create({
     data: {
       namaIuran: "Iuran Keamanan Bulanan",
+      jenisIuran: "Keamanan",
       nominal: 30000.0,
       tanggalJatuhTempo: new Date("2025-01-10"),
       statusAktif: true,
@@ -164,6 +182,7 @@ async function main() {
   const iuranSampah = await prisma.iuran.create({
     data: {
       namaIuran: "Iuran Sampah Rutin",
+      jenisIuran: "Kebersihan",
       nominal: 15000.0,
       tanggalJatuhTempo: new Date("2025-01-15"),
       statusAktif: false,

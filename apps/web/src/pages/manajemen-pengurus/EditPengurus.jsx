@@ -14,6 +14,7 @@ var jabatanOptions = [
 export default function EditPengurus() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [idWarga, setIdWarga] = useState('')
   const [jabatan, setJabatan] = useState('')
   const [periode, setPeriode] = useState('')
   const [loading, setLoading] = useState(true)
@@ -24,6 +25,7 @@ export default function EditPengurus() {
       .then(res => {
         const officer = res.data.find(o => o.id === id)
         if (officer) {
+          setIdWarga(officer.idWarga || '')
           setJabatan(officer.jabatan || '')
           setPeriode(officer.periodeJabatan || '')
         }
@@ -37,9 +39,8 @@ export default function EditPengurus() {
     if (!jabatan) return
     setSaving(true)
     try {
-      // Need residentId for updateOfficerRole, officers list doesn't return it
-      // Use officer id directly — backend needs idWarga
-      alert('Update jabatan pengurus saat ini perlu ID warga yang tidak tersedia di response GET /officers')
+      await updateOfficerRole(idWarga, { jabatan, periodeJabatan: periode })
+      alert('Jabatan pengurus berhasil diperbarui!')
       navigate('/kelola-pengurus')
     } catch (err) {
       alert('Gagal: ' + (err?.message || 'Terjadi kesalahan'))

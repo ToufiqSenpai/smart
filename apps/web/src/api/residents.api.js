@@ -28,6 +28,4 @@ export function updateOfficerRole(id, data) {
   return http.patch(`/residents/${id}/officer-role`, data)
 }
 
-export function register(data) {
-  return http.post('/residents/register', data)
-}
+// Gunakan register() dari auth.api.js yang sudah memiliki mapping noHp → no_hp

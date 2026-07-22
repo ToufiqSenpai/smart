@@ -6,9 +6,18 @@ import {
   addExpense,
   updateExpense,
   deleteExpense,
+  getFinanceReport,
 } from "./controller.js";
 
 const router = Router();
+
+// Get finance report - accessible by officers and chairperson
+router.get(
+  "/report",
+  authenticate,
+  authorize("OFFICER", "CHAIRPERSON"),
+  getFinanceReport,
+);
 
 // Get all expenses - accessible by officers and chairperson
 router.get(

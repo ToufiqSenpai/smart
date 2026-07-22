@@ -82,3 +82,28 @@ export async function countPaymentsPending() {
 export async function countIssuesByStatus(status: string) {
   return prisma.laporanKendala.count({ where: { statusLaporan: status } });
 }
+
+export async function findRecentIssues(limit: number) {
+  return prisma.laporanKendala.findMany({
+    orderBy: { tanggalLapor: "desc" },
+    take: limit,
+  });
+}
+
+export async function findRecentPayments(limit: number) {
+  return prisma.pembayaranIuran.findMany({
+    orderBy: { tanggalBayar: "desc" },
+    take: limit,
+    include: {
+      iuran: { select: { namaIuran: true } },
+      warga: { include: { masyarakat: { select: { nama: true } } } },
+    },
+  });
+}
+
+export async function findRecentAnnouncements(limit: number) {
+  return prisma.pengumuman.findMany({
+    orderBy: { tanggalPengumuman: "desc" },
+    take: limit,
+  });
+}

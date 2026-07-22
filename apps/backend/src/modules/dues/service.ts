@@ -318,11 +318,7 @@ export async function toggleIuranStatus(
 
 export async function getBills(user: AuthUser) {
   if (!user.idWarga) {
-    throw {
-      status: 403,
-      message: "Hanya warga yang dapat melihat tagihan",
-      code: "FORBIDDEN",
-    };
+    return [];
   }
 
   const activeIuran = await duesRepository.findIuranAktif();
