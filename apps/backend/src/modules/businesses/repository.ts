@@ -1,3 +1,4 @@
+import { $Enums } from '../../generated/prisma/client.js';
 import { prisma } from '../../db/prisma.js';
 
 interface CreateBusinessData {
@@ -8,7 +9,7 @@ interface CreateBusinessData {
   alamatUsaha: string;
   kontakUsaha: string;
   fotoUsaha?: string;
-  statusVerifikasi: string;
+  statusVerifikasi: $Enums.StatusVerifikasi;
 }
 
 interface UpdateBusinessData {
@@ -89,7 +90,7 @@ export async function update(id: string, data: UpdateBusinessData) {
   });
 }
 
-export async function updateStatus(id: string, statusVerifikasi: string, idPengurus: string) {
+export async function updateStatus(id: string, statusVerifikasi: $Enums.StatusVerifikasi, idPengurus: string) {
   return prisma.umkm.update({
     where: { idUmkm: id },
     data: { statusVerifikasi, idPengurus },

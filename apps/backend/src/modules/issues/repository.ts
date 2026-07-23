@@ -1,6 +1,7 @@
+import { $Enums } from '../../generated/prisma/client.js';
 import { prisma } from '../../db/prisma.js';
 
-export type IssueStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+export type IssueStatus = $Enums.StatusLaporan;
 
 interface CreateIssueData {
   idWarga: string;
@@ -8,7 +9,7 @@ interface CreateIssueData {
   deskripsi: string;
   fotoKendala?: string;
   tanggalLapor: Date;
-  statusLaporan: IssueStatus;
+  statusLaporan: $Enums.StatusLaporan;
 }
 
 interface UpdateIssueData {
@@ -81,7 +82,7 @@ export async function update(id: string, data: UpdateIssueData) {
   return item;
 }
 
-export async function updateStatus(id: string, statusLaporan: IssueStatus) {
+export async function updateStatus(id: string, statusLaporan: $Enums.StatusLaporan) {
   const item = await prisma.laporanKendala.update({
     where: { idLaporan: id },
     data: { statusLaporan },

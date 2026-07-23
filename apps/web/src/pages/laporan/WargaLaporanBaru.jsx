@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import AlertModal from "../../components/ui/AlertModal"
 import { createIssue } from "../../api/issues.api"
 
 export default function WargaLaporanBaru() {
@@ -8,6 +9,7 @@ export default function WargaLaporanBaru() {
   var [form, setForm] = useState({ kategori_kendala: '', deskripsi: '' })
   var [errors, setErrors] = useState({})
   var [loading, setLoading] = useState(false)
+  var [alert, setAlert] = useState(null)
 
   var updateField = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -28,10 +30,9 @@ export default function WargaLaporanBaru() {
     setLoading(true)
     try {
       await createIssue({ kategori_kendala: form.kategori_kendala, deskripsi: form.deskripsi })
-      alert('Laporan berhasil dikirim!')
-      navigate('/monitoring-laporan')
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Laporan berhasil dikirim!', onClose: () => { navigate('/monitoring-laporan') } })
     } catch (err) {
-      alert('Gagal: ' + (err?.message || 'Terjadi kesalahan'))
+      setAlert({ type: 'error', title: 'Gagal', message: err?.message || 'Terjadi kesalahan' })
     } finally {
       setLoading(false)
     }
@@ -82,6 +83,8 @@ export default function WargaLaporanBaru() {
           </div>
         </form>
       </div>
+
+      <AlertModal open={!!alert} onClose={() => { const cb = alert?.onClose; setAlert(null); cb?.() }} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

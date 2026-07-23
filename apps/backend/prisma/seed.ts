@@ -86,7 +86,7 @@ async function main() {
       nama: "Agus Wijaya",
       noHp: "081234567892",
       username: "aguswijaya",
-      status: "Aktif",
+      status: "AKTIF",
     },
     {
       nik: "3273010101900011",
@@ -94,7 +94,7 @@ async function main() {
       nama: "Rina Kartika",
       noHp: "081234567893",
       username: "rinakartika",
-      status: "Aktif",
+      status: "AKTIF",
     },
     {
       nik: "3273010101900012",
@@ -102,7 +102,7 @@ async function main() {
       nama: "Dedi Kurniawan",
       noHp: "081234567894",
       username: "dedikurniawan",
-      status: "Aktif",
+      status: "AKTIF",
     },
     {
       nik: "3273010101900013",
@@ -110,7 +110,7 @@ async function main() {
       nama: "Sri Wahyuni",
       noHp: "081234567895",
       username: "sriwahyuni",
-      status: "Aktif",
+      status: "AKTIF",
     },
     {
       nik: "3273010101900014",
@@ -118,7 +118,7 @@ async function main() {
       nama: "Andi Saputra",
       noHp: "081234567896",
       username: "andisaputra",
-      status: "Nonaktif",
+      status: "PENDING",
     },
     {
       nik: "3273010101900015",
@@ -126,7 +126,7 @@ async function main() {
       nama: "Lestari Putri",
       noHp: "081234567897",
       username: "lestariputri",
-      status: "Pindah",
+      status: "DITOLAK",
     },
   ];
 
@@ -196,7 +196,7 @@ async function main() {
   // 4. PEMBAYARAN IURAN
   // ======================================================
   const metodeBayarList = ["Transfer Bank", "Tunai", "QRIS", "E-Wallet"];
-  const statusVerifikasiBayarList = ["Terverifikasi", "Menunggu", "Ditolak"];
+  const statusVerifikasiBayarList: ("VERIFIED" | "PENDING" | "REJECTED")[] = ["VERIFIED", "PENDING", "REJECTED"];
   const periodeList = ["2025-01", "2025-02"];
 
   for (const warga of wargaList) {
@@ -263,22 +263,22 @@ async function main() {
     {
       judul: "Kerja Bakti",
       isi: "Kerja bakti bersama akan dilaksanakan hari Minggu pukul 07.00 di lingkungan RT.",
-      status: "Publish",
+      status: "PUBLISHED",
     },
     {
       judul: "Rapat RT",
       isi: "Rapat rutin bulanan pengurus dan warga akan diadakan di balai warga.",
-      status: "Publish",
+      status: "PUBLISHED",
     },
     {
       judul: "Jadwal Ronda",
       isi: "Jadwal ronda malam bulan ini sudah tersedia, silakan cek papan pengumuman.",
-      status: "Draft",
+      status: "DRAFT",
     },
     {
       judul: "Info Iuran",
       isi: "Diimbau kepada seluruh warga untuk melunasi iuran bulanan sebelum tanggal 10.",
-      status: "Publish",
+      status: "PUBLISHED",
     },
   ];
 
@@ -304,14 +304,14 @@ async function main() {
     "Infrastruktur",
     "Sosial",
   ];
-  const statusLaporanList = ["Baru", "Diproses", "Selesai"];
+  const statusLaporanList: ("PENDING" | "IN_PROGRESS" | "COMPLETED")[] = ["PENDING", "IN_PROGRESS", "COMPLETED"];
 
   for (let i = 0; i < wargaList.length; i++) {
     const status = statusLaporanList[i % statusLaporanList.length];
     await prisma.laporanKendala.create({
       data: {
         idWarga: wargaList[i].idWarga,
-        idPengurus: status === "Baru" ? null : ketuaRt.idPengurus,
+        idPengurus: status === "PENDING" ? null : ketuaRt.idPengurus,
         kategoriKendala: kategoriKendalaList[i % kategoriKendalaList.length],
         deskripsi:
           "Lampu jalan di depan rumah mati sejak 3 hari yang lalu, mohon segera diperbaiki.",
@@ -319,7 +319,7 @@ async function main() {
         tanggalLapor: new Date("2025-01-12"),
         statusLaporan: status,
         tanggapan:
-          status === "Selesai"
+          status === "COMPLETED"
             ? "Sudah diperbaiki oleh petugas terkait."
             : null,
       },
@@ -330,10 +330,10 @@ async function main() {
   // 8. UMKM
   // ======================================================
   const umkmData = [
-    { nama: "Warung Bu Siti", jenis: "Kuliner", status: "Disetujui" },
-    { nama: "Laundry Jaya", jenis: "Jasa", status: "Disetujui" },
-    { nama: "Bengkel Motor", jenis: "Jasa", status: "Menunggu" },
-    { nama: "Katering Sehat", jenis: "Kuliner", status: "Ditolak" },
+    { nama: "Warung Bu Siti", jenis: "Kuliner", status: "VERIFIED" },
+    { nama: "Laundry Jaya", jenis: "Jasa", status: "VERIFIED" },
+    { nama: "Bengkel Motor", jenis: "Jasa", status: "PENDING" },
+    { nama: "Katering Sehat", jenis: "Kuliner", status: "REJECTED" },
   ];
 
   for (let i = 0; i < umkmData.length; i++) {

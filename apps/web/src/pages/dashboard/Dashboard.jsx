@@ -47,7 +47,7 @@ function mapActivity(a) {
   }
   const s = statusMap[a.status] || { badge: a.status, variant: 'warning' }
   const iconMap = {
-    LAPORAN: a.status === 'SELESAI' || a.status === 'COMPLETED' ? Icons.CheckCircle : a.status === 'DIPROSES' || a.status === 'IN_PROGRESS' ? Icons.Clock : Icons.AlertCircle,
+    LAPORAN: a.status === 'COMPLETED' ? Icons.CheckCircle : a.status === 'IN_PROGRESS' ? Icons.Clock : Icons.AlertCircle,
     PEMBAYARAN: a.status === 'VERIFIED' ? Icons.CheckCircle : Icons.Clock,
     PENGUMUMAN: Icons.FileText,
   }

@@ -1,31 +1,158 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getDues } from "../../api/dues.api"
+import Modal from "../../components/ui/Modal"
+import Button from "../../components/ui/Button"
+import ConfirmModal from "../../components/ui/ConfirmModal"
+import AlertModal from "../../components/ui/AlertModal"
+import { getDues, createDue, updateDue, toggleDueStatus } from "../../api/dues.api"
 
 function formatRupiah(angka) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(angka)
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(angka)
 }
 
 function formatDate(dateStr) {
-  var parts = dateStr.split('-')
-  var months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des']
+  const parts = dateStr.split('-')
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des']
   return parseInt(parts[2]) + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0]
 }
 
+const initialForm = { nama_iuran: '', jenis_iuran: '', nominal: '', tanggal_jatuh_tempo: '' }
+
 export default function KetuaKelolaIuran() {
-  var navigate = useNavigate()
-  var [iuranData, setIuranData] = useState([])
-  var [loading, setLoading] = useState(true)
+  const [alert, setAlert] = useState(null)
+  const [iuranData, setIuranData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const [modalAdd, setModalAdd] = useState(false)
+  const [modalEdit, setModalEdit] = useState(null)
+  const [form, setForm] = useState(initialForm)
+  const [errors, setErrors] = useState({})
+  const [saving, setSaving] = useState(false)
+
+  const [confirmToggle, setConfirmToggle] = useState(null)
 
   useEffect(() => {
     getDues().then(res => setIuranData(res.data)).catch(err => console.error('Gagal memuat iuran:', err)).finally(() => setLoading(false))
   }, [])
+
+  function updateField(field, value) {
+    setForm(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }))
+  }
+
+  function validate() {
+    const newErrors = {}
+    if (!form.nama_iuran.trim()) newErrors.nama_iuran = 'Nama iuran harus diisi'
+    if (!form.jenis_iuran) newErrors.jenis_iuran = 'Jenis iuran harus dipilih'
+    if (!form.nominal || isNaN(form.nominal)) newErrors.nominal = 'Nominal harus berupa angka'
+    if (!form.tanggal_jatuh_tempo) newErrors.tanggal_jatuh_tempo = 'Tanggal jatuh tempo harus diisi'
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  function openAddModal() {
+    setForm(initialForm)
+    setErrors({})
+    setModalAdd(true)
+  }
+
+  function openEditModal(iuran) {
+    setForm({
+      nama_iuran: iuran.nama_iuran || '',
+      jenis_iuran: iuran.jenis_iuran || '',
+      nominal: String(iuran.nominal || ''),
+      tanggal_jatuh_tempo: iuran.tanggal_jatuh_tempo || '',
+    })
+    setErrors({})
+    setModalEdit(iuran.id)
+  }
+
+  async function handleAdd(e) {
+    e.preventDefault()
+    if (!validate()) return
+    setSaving(true)
+    try {
+      await createDue({
+        nama_iuran: form.nama_iuran,
+        jenis_iuran: form.jenis_iuran,
+        nominal: Number(form.nominal),
+        tanggal_jatuh_tempo: form.tanggal_jatuh_tempo,
+      })
+      const res = await getDues()
+      setIuranData(res.data)
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Data berhasil disimpan', onClose: () => { setModalAdd(false) } })
+    } catch (err) {
+      setAlert({ type: 'error', title: 'Gagal', message: err?.response?.data?.message || err?.message || 'Terjadi kesalahan' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleEdit(e) {
+    e.preventDefault()
+    if (!validate()) return
+    setSaving(true)
+    try {
+      await updateDue(modalEdit, {
+        nama_iuran: form.nama_iuran,
+        jenis_iuran: form.jenis_iuran,
+        nominal: Number(form.nominal),
+        tanggal_jatuh_tempo: form.tanggal_jatuh_tempo,
+      })
+      const res = await getDues()
+      setIuranData(res.data)
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Data berhasil disimpan', onClose: () => { setModalEdit(null) } })
+    } catch (err) {
+      setAlert({ type: 'error', title: 'Gagal', message: err?.response?.data?.message || err?.message || 'Terjadi kesalahan' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleToggleStatus(id, currentStatus) {
+    try {
+      await toggleDueStatus(id, { status: currentStatus ? 'INACTIVE' : 'ACTIVE' })
+      setIuranData(prev => prev.map(i => i.id === id ? { ...i, status_aktif: !currentStatus } : i))
+      setConfirmToggle(null)
+      setAlert({ type: 'success', title: 'Berhasil', message: `Iuran berhasil ${currentStatus ? 'dinonaktifkan' : 'diaktifkan'}` })
+    } catch (err) {
+      setAlert({ type: 'error', title: 'Gagal', message: err?.response?.data?.message || err?.message || 'Terjadi kesalahan' })
+      setConfirmToggle(null)
+    }
+  }
+
+  const formFields = (
+    <>
+      <div className="mb-5">
+        <label className="block text-[13px] font-semibold text-text-primary mb-1">Nama Iuran</label>
+        <input type="text" className={`w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-white border rounded-[14px] outline-none transition-all focus:border-primary ${errors.nama_iuran ? 'border-error' : 'border-border-subtle'}`} placeholder="Contoh: Iuran Keamanan" value={form.nama_iuran} onChange={(e) => updateField('nama_iuran', e.target.value)} />
+        {errors.nama_iuran && <div className="text-xs text-error mt-1">{errors.nama_iuran}</div>}
+      </div>
+      <div className="mb-5">
+        <label className="block text-[13px] font-semibold text-text-primary mb-1">Jenis Iuran</label>
+        <select className={`w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-white border rounded-[14px] outline-none transition-all focus:border-primary ${errors.jenis_iuran ? 'border-error' : 'border-border-subtle'}`} value={form.jenis_iuran} onChange={(e) => updateField('jenis_iuran', e.target.value)}>
+          <option value="">-- Pilih Jenis --</option>
+          <option value="Wajib">Wajib</option>
+          <option value="Opsional">Opsional</option>
+          <option value="Sosial">Sosial</option>
+          <option value="Keamanan">Keamanan</option>
+          <option value="Kebersihan">Kebersihan</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+        {errors.jenis_iuran && <div className="text-xs text-error mt-1">{errors.jenis_iuran}</div>}
+      </div>
+      <div className="mb-5">
+        <label className="block text-[13px] font-semibold text-text-primary mb-1">Nominal (Rp)</label>
+        <input type="text" className={`w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-white border rounded-[14px] outline-none transition-all focus:border-primary ${errors.nominal ? 'border-error' : 'border-border-subtle'}`} placeholder="Contoh: 50000" value={form.nominal} onChange={(e) => updateField('nominal', e.target.value)} />
+        {errors.nominal && <div className="text-xs text-error mt-1">{errors.nominal}</div>}
+      </div>
+      <div className="mb-5">
+        <label className="block text-[13px] font-semibold text-text-primary mb-1">Tanggal Jatuh Tempo</label>
+        <input type="date" className={`w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-white border rounded-[14px] outline-none transition-all focus:border-primary ${errors.tanggal_jatuh_tempo ? 'border-error' : 'border-border-subtle'}`} value={form.tanggal_jatuh_tempo} onChange={(e) => updateField('tanggal_jatuh_tempo', e.target.value)} />
+        {errors.tanggal_jatuh_tempo && <div className="text-xs text-error mt-1">{errors.tanggal_jatuh_tempo}</div>}
+      </div>
+    </>
+  )
 
   return (
     <DashboardLayout>
@@ -37,24 +164,12 @@ export default function KetuaKelolaIuran() {
 
       <div className="flex items-center justify-between gap-4 flex-wrap mb-6">
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex items-center">
-            <svg className="icon absolute left-3.5 text-text-muted pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7" /><line x1="16.5" y1="16.5" x2="21" y2="21" /></svg>
-            <input type="text" placeholder="Cari nama iuran..." className="w-[260px] py-2.5 pl-[42px] pr-3.5 rounded-[10px] border border-border-subtle bg-bg-card text-[13.5px] text-text-primary font-sans transition-all shadow-lux focus:outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(30,75,133,0.08)] placeholder:text-text-muted" />
-          </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="statusFilter" className="text-[12.5px] font-semibold text-text-muted whitespace-nowrap">Status</label>
-            <select id="statusFilter" className="p-2 px-3 rounded-[10px] border border-border-subtle bg-bg-card text-[13px] text-text-primary font-sans shadow-lux cursor-pointer">
-              <option value="all">Semua</option>
-              <option value="active">Aktif</option>
-              <option value="inactive">Nonaktif</option>
-            </select>
-          </div>
           <span className="text-xs font-semibold text-text-muted px-3.5 py-1.5 bg-bg-card rounded-full border border-border-subtle shadow-lux">{iuranData.length} iuran</span>
         </div>
-        <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] text-[13px] font-semibold font-sans cursor-pointer transition-all border-none bg-primary text-white shadow-[0_4px_12px_rgba(30,75,133,0.2)] hover:bg-[#163d6e] hover:-translate-y-px" onClick={() => navigate('/tambah-iuran')}>
-          <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+        <Button onClick={openAddModal}>
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
           Tambah Iuran
-        </button>
+        </Button>
       </div>
 
       <div className="bg-bg-card rounded-[20px] border border-border-subtle shadow-lux overflow-hidden">
@@ -80,28 +195,78 @@ export default function KetuaKelolaIuran() {
                 <tr><td colSpan="7" className="text-center py-12 text-text-muted text-[13.5px]">Memuat data...</td></tr>
               ) : iuranData.length === 0 ? (
                 <tr><td colSpan="7" className="text-center py-12 text-text-muted text-[13.5px]">Tidak ada data iuran.</td></tr>
-              ) : iuranData.map(function(iuran, index) {
-                var statusLabel = iuran.status_aktif ? 'Aktif' : 'Nonaktif'
-                var actionLabel = iuran.status_aktif ? 'Nonaktifkan' : 'Aktifkan'
-                return (
-                  <tr key={iuran.id} className="hover:bg-primary-lighter">
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{index + 1}</td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6" style={{ fontWeight: 600, color: "var(--ink-black)" }}>{iuran.nama_iuran}</td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{iuran.jenis_iuran}</td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{formatRupiah(iuran.nominal)}</td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{formatDate(iuran.tanggal_jatuh_tempo)}</td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6"><span className={"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap " + (iuran.status_aktif ? 'bg-success-bg text-success border border-success/10' : 'bg-error-bg text-error border border-error/10')}>{statusLabel}</span></td>
-                    <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 text-right pr-6">
-                      <a href="/ketua/kelola-iuran" className="text-[12.5px] text-primary font-semibold no-underline hover:underline" onClick={(e) => { e.preventDefault(); navigate('/edit-iuran/' + iuran.id) }}>Edit</a>
-                      <a href="/ketua/kelola-iuran" className="text-[12.5px] text-primary font-semibold no-underline hover:underline ml-3">{actionLabel}</a>
-                    </td>
-                  </tr>
-                )
-              })}
+              ) : iuranData.map((iuran, index) => (
+                <tr key={iuran.id} className="hover:bg-primary-lighter">
+                  <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{index + 1}</td>
+                  <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6" style={{ fontWeight: 600, color: "var(--ink-black)" }}>{iuran.nama_iuran}</td>
+                  <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{iuran.jenis_iuran}</td>
+                  <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{formatRupiah(iuran.nominal)}</td>
+                  <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{formatDate(iuran.tanggal_jatuh_tempo)}</td>
+                  <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">
+                    <span className={"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap " + (iuran.status_aktif ? 'bg-success-bg text-success border border-success/10' : 'bg-error-bg text-error border border-error/10')}>{iuran.status_aktif ? 'Aktif' : 'Nonaktif'}</span>
+                  </td>
+                  <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 text-right pr-6">
+                    <div className="flex items-center gap-2 justify-end">
+                      <Button variant="outline" size="sm" onClick={() => openEditModal(iuran)}>Edit</Button>
+                      <Button variant={iuran.status_aktif ? "secondary" : "primary"} size="sm" onClick={() => setConfirmToggle(iuran)}>{iuran.status_aktif ? 'Nonaktifkan' : 'Aktifkan'}</Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      <Modal
+        open={modalAdd}
+        onClose={() => setModalAdd(false)}
+        title="Tambah Iuran"
+        subtitle="Tambahkan jenis iuran baru untuk warga RT 08."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModalAdd(false)}>Batal</Button>
+            <Button onClick={handleAdd} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan'}</Button>
+          </>
+        }
+      >
+        <form onSubmit={handleAdd}>{formFields}</form>
+      </Modal>
+
+      <Modal
+        open={!!modalEdit}
+        onClose={() => setModalEdit(null)}
+        title="Edit Iuran"
+        subtitle="Edit jenis iuran untuk warga RT 08."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModalEdit(null)}>Batal</Button>
+            <Button onClick={handleEdit} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</Button>
+          </>
+        }
+      >
+        <form onSubmit={handleEdit}>{formFields}</form>
+      </Modal>
+
+      <ConfirmModal
+        open={!!confirmToggle}
+        onClose={() => setConfirmToggle(null)}
+        onConfirm={() => handleToggleStatus(confirmToggle?.id, confirmToggle?.status_aktif)}
+        title={confirmToggle?.status_aktif ? 'Nonaktifkan Iuran' : 'Aktifkan Iuran'}
+        message={`Apakah Anda yakin ingin ${confirmToggle?.status_aktif ? 'menonaktifkan' : 'mengaktifkan'} iuran "${confirmToggle?.nama_iuran}"?`}
+        confirmText={confirmToggle?.status_aktif ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan'}
+        variant={confirmToggle?.status_aktif ? 'danger' : 'primary'}
+      />
+
+      <AlertModal
+        open={!!alert}
+        onClose={() => { const cb = alert?.onClose; setAlert(null); cb?.() }}
+        type={alert?.type}
+        title={alert?.title}
+        message={alert?.message}
+      />
     </DashboardLayout>
   )
 }

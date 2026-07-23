@@ -24,8 +24,10 @@ npm run dev              # Both apps concurrently
 npm run dev:web          # Frontend only (port 3000)
 npm run dev:backend      # Backend only (port 5000)
 npm run build            # Build both (backend first)
-npm run test -w apps/web # Run frontend tests
-npm run lint -w apps/web # Lint frontend
+npm run test              # Run frontend tests (watch mode)
+npm run test:run          # Run frontend tests (single run)
+npm run test:e2e          # Run Playwright E2E tests
+npm run lint -w apps/web  # Lint frontend
 npm run format -w apps/web # Format frontend (Prettier + ESLint fix)
 npx prisma migrate dev --schema apps/backend/prisma/schema.prisma  # Run migrations
 npx prisma generate --schema apps/backend/prisma/schema.prisma     # Regenerate client

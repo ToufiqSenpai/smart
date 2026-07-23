@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import AlertModal from "../../components/ui/AlertModal"
+import ConfirmModal from "../../components/ui/ConfirmModal"
 import { getBusinesses, validateBusiness } from "../../api/businesses.api"
 
 const statusClass = {
@@ -16,6 +18,8 @@ export default function KetuaValidasiUMKM() {
   var [statusFilter, setStatusFilter] = useState('all')
   var [data, setData] = useState([])
   var [loading, setLoading] = useState(true)
+  var [alert, setAlert] = useState(null)
+  var [confirm, setConfirm] = useState(null)
 
   useEffect(() => {
     getBusinesses({ keyword: search || undefined })
@@ -38,17 +42,24 @@ export default function KetuaValidasiUMKM() {
   }
 
   const handleVerifikasi = (id, namaUsaha, pemilik) => {
-    if (!confirm(`Validasi UMKM "${namaUsaha}" milik ${pemilik}?`)) return
-    validateBusiness(id, { status: 'VERIFIED' })
-      .then(() => refresh())
-      .catch(err => console.error('Gagal verifikasi:', err))
+    setConfirm({ type: 'VERIFIED', id, namaUsaha, pemilik })
   }
 
   const handleTolak = (id, namaUsaha, pemilik) => {
-    if (!confirm(`Tolak UMKM "${namaUsaha}" milik ${pemilik}?`)) return
-    validateBusiness(id, { status: 'REJECTED' })
-      .then(() => refresh())
-      .catch(err => console.error('Gagal menolak:', err))
+    setConfirm({ type: 'REJECTED', id, namaUsaha, pemilik })
+  }
+
+  const handleConfirm = () => {
+    if (!confirm) return
+    validateBusiness(confirm.id, { status: confirm.type })
+      .then(() => {
+        setAlert({ type: 'success', title: 'Berhasil', message: `UMKM ${confirm.namaUsaha} berhasil ${confirm.type === 'VERIFIED' ? 'divalidasi' : 'ditolak'}.` })
+        refresh()
+      })
+      .catch(err => {
+        setAlert({ type: 'error', title: 'Gagal', message: err?.message || 'Terjadi kesalahan' })
+      })
+    setConfirm(null)
   }
 
   return (
@@ -125,6 +136,18 @@ export default function KetuaValidasiUMKM() {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={handleConfirm}
+        title={confirm?.type === 'VERIFIED' ? 'Validasi UMKM' : 'Tolak UMKM'}
+        message={confirm ? `${confirm.type === 'VERIFIED' ? 'Validasi' : 'Tolak'} UMKM "${confirm.namaUsaha}" milik ${confirm.pemilik}?` : ''}
+        confirmText={confirm?.type === 'VERIFIED' ? 'Ya, Validasi' : 'Ya, Tolak'}
+        variant={confirm?.type === 'VERIFIED' ? 'success' : 'danger'}
+      />
+
+      <AlertModal open={!!alert} onClose={() => setAlert(null)} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

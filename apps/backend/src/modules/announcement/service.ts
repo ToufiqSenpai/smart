@@ -1,3 +1,4 @@
+import { $Enums } from '../../generated/prisma/client.js';
 import * as announcementRepository from './repository.js';
 import type { AuthUser } from '../../middleware/auth.js';
 
@@ -29,7 +30,7 @@ export async function createAnnouncement(user: AuthUser, data: { judul: string; 
     isiPengumuman: data.isi_pengumuman,
     lampiran: data.lampiran,
     tanggalPengumuman: new Date(),
-    statusPublikasi: data.status_publikasi,
+    statusPublikasi: data.status_publikasi as $Enums.StatusPublikasi,
   });
   return { message: 'Pengumuman berhasil ditambahkan.' };
 }
@@ -58,7 +59,7 @@ export async function updateAnnouncement(announcementId: string, user: AuthUser,
     ...(data.judul && { judul: data.judul }),
     ...(data.isi_pengumuman && { isiPengumuman: data.isi_pengumuman }),
     ...(data.lampiran !== undefined && { lampiran: data.lampiran }),
-    ...(data.status_publikasi && { statusPublikasi: data.status_publikasi }),
+    ...(data.status_publikasi && { statusPublikasi: data.status_publikasi as $Enums.StatusPublikasi }),
   });
   return { message: 'Pengumuman berhasil diperbarui.' };
 }

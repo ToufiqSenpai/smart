@@ -12,6 +12,33 @@ datasource db {
   provider = "postgresql"
 }
 
+// ===================== Enums =====================
+
+enum StatusKeanggotaan {
+  PENDING
+  AKTIF
+  DITOLAK
+}
+
+enum StatusVerifikasi {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum StatusPublikasi {
+  PUBLISHED
+  DRAFT
+}
+
+enum StatusLaporan {
+  PENDING
+  VERIFIED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
 // 1. Tabel Masyarakat
 model Masyarakat {
   idMasyarakat String  @id @default(uuid()) @map("id_masyarakat") @db.VarChar(36)
@@ -32,8 +59,8 @@ model Masyarakat {
 
 // 2. Tabel Warga
 model Warga {
-  idWarga           String @id @default(uuid()) @map("id_warga") @db.VarChar(36)
-  statusKeanggotaan String @map("status_keanggotaan") @db.VarChar(12)
+  idWarga           String            @id @default(uuid()) @map("id_warga") @db.VarChar(36)
+  statusKeanggotaan StatusKeanggotaan  @map("status_keanggotaan")
 
   // Foreign Key ke Masyarakat
   idMasyarakat      String @unique @map("id_masyarakat") @db.VarChar(36)
@@ -94,8 +121,8 @@ model PembayaranIuran {
   tanggalBayar     DateTime @map("tanggal_bayar") @db.Date
   metodeBayar      String   @map("metode_bayar") @db.VarChar(15)
   jumlahBayar      Decimal  @map("jumlah_bayar") @db.Decimal(20, 2)
-  buktiPembayaran  String?  @map("bukti_pembayaran") @db.Text 
-  statusVerifikasi String   @map("status_verifikasi") @db.VarChar(15)
+  buktiPembayaran  String?          @map("bukti_pembayaran") @db.Text 
+  statusVerifikasi StatusVerifikasi  @map("status_verifikasi")
 
   warga            Warga      @relation(fields: [idWarga], references: [idWarga])
   iuran            Iuran      @relation(fields: [idIuran], references: [idIuran])
@@ -128,8 +155,8 @@ model Pengumuman {
   judul             String   @db.VarChar(15)
   isiPengumuman     String   @map("isi_pengumuman") @db.Text
   lampiran          String?  @db.Text
-  tanggalPengumuman DateTime @map("tanggal_pengumuman") @db.Date
-  statusPublikasi   String   @map("status_publikasi") @db.VarChar(12)
+  tanggalPengumuman DateTime        @map("tanggal_pengumuman") @db.Date
+  statusPublikasi   StatusPublikasi  @map("status_publikasi")
 
   pengurus          PengurusRt @relation(fields: [idPengurus], references: [idPengurus])
 
@@ -144,8 +171,8 @@ model LaporanKendala {
   kategoriKendala String   @map("kategori_kendala") @db.VarChar(15)
   deskripsi       String   @db.Text
   fotoKendala     String?  @map("foto_kendala") @db.Text
-  tanggalLapor    DateTime @map("tanggal_lapor") @db.Date
-  statusLaporan   String   @map("status_laporan") @db.VarChar(10)
+  tanggalLapor    DateTime       @map("tanggal_lapor") @db.Date
+  statusLaporan   StatusLaporan  @map("status_laporan")
   tanggapan       String?  @db.Text
 
   warga           Warga       @relation(fields: [idWarga], references: [idWarga])
@@ -164,8 +191,8 @@ model Umkm {
   deskripsiUsaha   String   @map("deskripsi_usaha") @db.Text
   alamatUsaha      String   @map("alamat_usaha") @db.Text
   kontakUsaha      String   @map("kontak_usaha") @db.VarChar(15)
-  fotoUsaha        String?  @map("foto_usaha") @db.Text
-  statusVerifikasi String   @map("status_verifikasi") @db.VarChar(12)
+  fotoUsaha        String?          @map("foto_usaha") @db.Text
+  statusVerifikasi StatusVerifikasi  @map("status_verifikasi")
 
   warga            Warga      @relation(fields: [idWarga], references: [idWarga])
   pengurus         PengurusRt? @relation(fields: [idPengurus], references: [idPengurus])

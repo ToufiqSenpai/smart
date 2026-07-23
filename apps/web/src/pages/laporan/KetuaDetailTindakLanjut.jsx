@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import AlertModal from "../../components/ui/AlertModal"
 import { getIssueById, followUpIssue } from "../../api/issues.api"
 
 function getStatusClass(s) {
@@ -20,6 +21,7 @@ export default function KetuaDetailTindakLanjut() {
   const [tanggapan, setTanggapan] = useState('')
   const [status, setStatus] = useState('IN_PROGRESS')
   const [saving, setSaving] = useState(false)
+  const [alert, setAlert] = useState(null)
 
   useEffect(() => {
     getIssueById(id)
@@ -34,10 +36,9 @@ export default function KetuaDetailTindakLanjut() {
     setSaving(true)
     try {
       await followUpIssue(id, { tanggapan, status })
-      alert('Tindak lanjut berhasil dikirim!')
-      navigate('/tindak-lanjut-laporan')
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Tindak lanjut berhasil dikirim!', onClose: () => { navigate('/tindak-lanjut-laporan') } })
     } catch (err) {
-      alert('Gagal: ' + (err?.message || 'Terjadi kesalahan'))
+      setAlert({ type: 'error', title: 'Gagal', message: err?.message || 'Terjadi kesalahan' })
     } finally {
       setSaving(false)
     }
@@ -98,8 +99,10 @@ export default function KetuaDetailTindakLanjut() {
               </button>
             </div>
           </form>
+          </div>
         </div>
-      </div>
+
+      <AlertModal open={!!alert} onClose={() => { const cb = alert?.onClose; setAlert(null); cb?.() }} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

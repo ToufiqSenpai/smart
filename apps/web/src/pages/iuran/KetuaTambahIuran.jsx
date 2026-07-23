@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import AlertModal from "../../components/ui/AlertModal"
 import { createDue } from "../../api/dues.api"
 
 export default function KetuaTambahIuran() {
@@ -8,6 +9,7 @@ export default function KetuaTambahIuran() {
   const [form, setForm] = useState({ nama_iuran: '', jenis_iuran: '', nominal: '', tanggal_jatuh_tempo: '' })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [alert, setAlert] = useState(null)
 
   const updateField = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -35,10 +37,9 @@ export default function KetuaTambahIuran() {
         nominal: Number(form.nominal),
         tanggal_jatuh_tempo: form.tanggal_jatuh_tempo,
       })
-      alert('Iuran berhasil ditambahkan!')
-      navigate('/kelola-iuran')
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Iuran berhasil ditambahkan!', onClose: () => { navigate('/kelola-iuran') } })
     } catch (err) {
-      alert('Gagal: ' + (err?.message || 'Terjadi kesalahan'))
+      setAlert({ type: 'error', title: 'Gagal', message: err?.message || 'Terjadi kesalahan' })
     } finally {
       setLoading(false)
     }
@@ -99,6 +100,8 @@ export default function KetuaTambahIuran() {
           </div>
         </form>
       </div>
+
+      <AlertModal open={!!alert} onClose={() => { const cb = alert?.onClose; setAlert(null); cb?.() }} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

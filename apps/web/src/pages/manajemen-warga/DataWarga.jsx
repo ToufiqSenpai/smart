@@ -34,7 +34,8 @@ export default function DataWarga() {
             <select id="statusFilter" className="p-2 px-3 rounded-[10px] border border-border-subtle bg-bg-card text-[13px] text-text-primary font-sans shadow-lux cursor-pointer" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">Semua</option>
               <option value="AKTIF">Aktif</option>
-              <option value="MENUNGGU">Menunggu</option>
+              <option value="PENDING">Menunggu</option>
+              <option value="DITOLAK">Ditolak</option>
             </select>
           </div>
           <span className="text-xs font-semibold text-text-muted px-3.5 py-1.5 bg-bg-card rounded-full border border-border-subtle shadow-lux">{data.length} warga</span>
@@ -72,7 +73,7 @@ export default function DataWarga() {
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{w.alamat}</td>
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{w.no_hp}</td>
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">
-                      <span className={"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap " + (w.statusKeanggotaan === 'AKTIF' ? 'bg-success-bg text-success border border-success/10' : 'bg-warning-bg text-warning border border-warning/10')}>{w.statusKeanggotaan === 'AKTIF' ? 'Aktif' : 'Menunggu'}</span>
+                      <span className={"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap " + (w.statusKeanggotaan === 'AKTIF' ? 'bg-success-bg text-success border border-success/10' : w.statusKeanggotaan === 'DITOLAK' ? 'bg-error-bg text-error border border-error/10' : 'bg-warning-bg text-warning border border-warning/10')}>{w.statusKeanggotaan === 'AKTIF' ? 'Aktif' : w.statusKeanggotaan === 'DITOLAK' ? 'Ditolak' : 'Menunggu'}</span>
                     </td>
                   </tr>
                 )

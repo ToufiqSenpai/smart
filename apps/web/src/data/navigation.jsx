@@ -30,6 +30,7 @@ export const pengurusNav = [
     type: "dropdown", label: "UMKM", icon: ICONS.umkm,
     children: [
       { label: "UMKM Saya", path: "/umkm-saya" },
+      { label: "Tambah UMKM", path: "/tambah-umkm" },
       { label: "Validasi UMKM", path: "/validasi-umkm" },
       { label: "Lihat UMKM", path: "/lihat-umkm" },
     ],
@@ -68,6 +69,7 @@ export const ketuaNav = [
     type: "dropdown", label: "UMKM", icon: ICONS.umkm,
     children: [
       { label: "UMKM Saya", path: "/umkm-saya" },
+      { label: "Tambah UMKM", path: "/tambah-umkm" },
       { label: "Validasi UMKM", path: "/validasi-umkm" },
       { label: "Lihat UMKM", path: "/lihat-umkm" },
     ],

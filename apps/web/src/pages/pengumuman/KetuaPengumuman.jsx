@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react"
-import { Link, useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getAnnouncements, deleteAnnouncement } from "../../api/announcements.api"
+import Modal from "../../components/ui/Modal"
+import Button from "../../components/ui/Button"
+import ConfirmModal from "../../components/ui/ConfirmModal"
+import AlertModal from "../../components/ui/AlertModal"
+import { getAnnouncements, getAnnouncementById, createAnnouncement, updateAnnouncement, deleteAnnouncement } from "../../api/announcements.api"
 
 const statusClass = {
   PUBLISHED: "inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-bold border bg-success-bg text-success border-success/10",
@@ -14,12 +17,23 @@ function formatDate(dateStr) {
   return parseInt(parts[2]) + ' ' + months[parseInt(parts[1]) - 1] + ' ' + parts[0]
 }
 
+const initialForm = { judul: '', isi: '', status: '' }
+
 export default function KetuaPengumuman() {
-  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
+
+  const [modalAdd, setModalAdd] = useState(false)
+  const [modalEdit, setModalEdit] = useState(null)
+  const [form, setForm] = useState(initialForm)
+  const [errors, setErrors] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [loadingEdit, setLoadingEdit] = useState(false)
+
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [alert, setAlert] = useState(null)
 
   useEffect(() => {
     getAnnouncements()
@@ -34,18 +48,122 @@ export default function KetuaPengumuman() {
     return matchSearch && matchStatus
   })
 
-  const refresh = () => {
+  function refresh() {
     getAnnouncements()
       .then(res => setData(res.data))
       .catch(err => console.error('Gagal memuat pengumuman:', err))
   }
 
-  const handleDelete = (id, judul) => {
-    if (!confirm(`Hapus pengumuman "${judul}"?`)) return
-    deleteAnnouncement(id)
-      .then(() => refresh())
-      .catch(err => console.error('Gagal menghapus pengumuman:', err))
+  function updateField(field, value) {
+    setForm(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }))
   }
+
+  function validate() {
+    const newErrors = {}
+    if (!form.judul.trim()) newErrors.judul = 'Judul harus diisi'
+    if (!form.isi.trim()) newErrors.isi = 'Isi pengumuman harus diisi'
+    if (!form.status) newErrors.status = 'Status harus dipilih'
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  function openAddModal() {
+    setForm(initialForm)
+    setErrors({})
+    setModalAdd(true)
+  }
+
+  async function openEditModal(id) {
+    setLoadingEdit(true)
+    setErrors({})
+    try {
+      const res = await getAnnouncementById(id)
+      const d = res.data
+      setForm({
+        judul: d.judul || '',
+        isi: d.isi_pengumuman || '',
+        status: d.status_publikasi === 'PUBLISHED' ? 'publik' : 'draft',
+      })
+      setModalEdit(id)
+    } catch {
+      setAlert({ type: 'error', title: 'Gagal', message: 'Gagal memuat data' })
+    } finally {
+      setLoadingEdit(false)
+    }
+  }
+
+  async function handleAdd(e) {
+    e.preventDefault()
+    if (!validate()) return
+    setSaving(true)
+    try {
+      await createAnnouncement({
+        judul: form.judul,
+        isi_pengumuman: form.isi,
+        status_publikasi: form.status === 'publik' ? 'PUBLISHED' : 'DRAFT',
+      })
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Pengumuman berhasil ditambahkan', onClose: () => { refresh(); setModalAdd(false) } })
+    } catch (err) {
+      setAlert({ type: 'error', title: 'Gagal', message: err?.response?.data?.message || err?.message || 'Terjadi kesalahan' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleEdit(e) {
+    e.preventDefault()
+    if (!validate()) return
+    setSaving(true)
+    try {
+      await updateAnnouncement(modalEdit, {
+        judul: form.judul,
+        isi_pengumuman: form.isi,
+        status_publikasi: form.status === 'publik' ? 'PUBLISHED' : 'DRAFT',
+      })
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Pengumuman berhasil diperbarui', onClose: () => { refresh(); setModalEdit(null) } })
+    } catch (err) {
+      setAlert({ type: 'error', title: 'Gagal', message: err?.response?.data?.message || err?.message || 'Terjadi kesalahan' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete(id) {
+    try {
+      await deleteAnnouncement(id)
+      refresh()
+      setConfirmDelete(null)
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Pengumuman berhasil dihapus' })
+    } catch (err) {
+      setAlert({ type: 'error', title: 'Gagal', message: err?.response?.data?.message || err?.message || 'Terjadi kesalahan' })
+      setConfirmDelete(null)
+    }
+  }
+
+  const formFields = (
+    <>
+      <div className="mb-5">
+        <label className="block text-[13px] font-semibold text-text-primary mb-1">Judul Pengumuman</label>
+        <input type="text" className={`w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-white border rounded-[14px] outline-none transition-all focus:border-primary ${errors.judul ? 'border-error' : 'border-border-subtle'}`} placeholder="Masukkan judul pengumuman" value={form.judul} onChange={(e) => updateField('judul', e.target.value)} />
+        {errors.judul && <div className="text-xs text-error mt-1">{errors.judul}</div>}
+      </div>
+      <div className="mb-5">
+        <label className="block text-[13px] font-semibold text-text-primary mb-1">Isi Pengumuman</label>
+        <textarea className={`w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-white border rounded-[14px] outline-none transition-all focus:border-primary ${errors.isi ? 'border-error' : 'border-border-subtle'}`} placeholder="Tulis isi pengumuman di sini..." rows="5" value={form.isi} onChange={(e) => updateField('isi', e.target.value)} />
+        {errors.isi && <div className="text-xs text-error mt-1">{errors.isi}</div>}
+      </div>
+      <div className="mb-5">
+        <label className="block text-[13px] font-semibold text-text-primary mb-1">Status Publikasi</label>
+        <select className={`w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-white border rounded-[14px] outline-none transition-all focus:border-primary ${errors.status ? 'border-error' : 'border-border-subtle'}`} value={form.status} onChange={(e) => updateField('status', e.target.value)}>
+          <option value="">-- Pilih Status --</option>
+          <option value="draft">Draft (belum dipublikasikan)</option>
+          <option value="publik">Publik (langsung terlihat warga)</option>
+        </select>
+        {errors.status && <div className="text-xs text-error mt-1">{errors.status}</div>}
+      </div>
+    </>
+  )
 
   return (
     <DashboardLayout>
@@ -63,18 +181,18 @@ export default function KetuaPengumuman() {
           </div>
           <div className="flex items-center gap-2">
             <label htmlFor="statusFilter" className="text-xs font-semibold text-text-muted uppercase tracking-[0.05em]">Status</label>
-            <select id="statusFilter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3.5 py-1.5 pl-[14px] pr-[32px] font-sans text-[13px] text-text-primary bg-bg border border-border-subtle rounded-full outline-none h-[38px] appearance-none cursor-pointer transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(30,75,133,0.06)]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%2371717A' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}>
+            <select id="statusFilter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3.5 py-1.5 pl-[14px] pr-[32px] font-sans text-[13px] text-text-primary bg-bg border border-border-subtle rounded-full outline-none h-[38px] appearance-none cursor-pointer transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(30,75,133,0.06)]">
               <option value="all">Semua</option>
               <option value="PUBLISHED">Publik</option>
               <option value="DRAFT">Draft</option>
             </select>
           </div>
-          <span className="text-xs font-semibold text-text-muted bg-bg px-3.5 py-1 rounded-full border border-border-subtle whitespace-nowrap" id="rowCount">{filtered.length} pengumuman</span>
+          <span className="text-xs font-semibold text-text-muted bg-bg px-3.5 py-1 rounded-full border border-border-subtle whitespace-nowrap">{filtered.length} pengumuman</span>
         </div>
-        <Link to="/tambah-pengumuman" className="inline-flex items-center gap-2 px-5 py-2 font-sans text-[13px] font-semibold bg-primary text-white border-none rounded-full cursor-pointer min-h-[38px] transition-all whitespace-nowrap hover:bg-[#163b6a] hover:shadow-[0_4px_12px_rgba(30,75,133,0.25)] hover:-translate-y-px">
-          <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+        <Button onClick={openAddModal}>
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
           Tambah Pengumuman
-        </Link>
+        </Button>
       </div>
 
       <div className="bg-bg-card rounded-[20px] border border-border-subtle shadow-lux overflow-hidden">
@@ -93,21 +211,21 @@ export default function KetuaPengumuman() {
                 <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-text-muted bg-bg border-b border-border-subtle whitespace-nowrap text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody id="tableBody">
+            <tbody>
               {loading ? (
                 <tr><td colSpan="5" className="text-center py-12 text-text-muted text-[13.5px]">Memuat data...</td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan="5" className="text-center py-12 text-text-muted text-[13.5px]">Tidak ada pengumuman.</td></tr>
               ) : filtered.map((p, i) => (
                 <tr key={p.id} className="hover:bg-bg">
-                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0">{i + 1}</td>
-                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0"><span className="font-semibold text-text-primary">{p.judul}</span></td>
-                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0"><span className="font-mono text-[12px] text-text-primary">{formatDate(p.tanggal_pengumuman)}</span></td>
-                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0"><span className={statusClass[p.status_publikasi]}>{p.status_publikasi === "PUBLISHED" ? "Publik" : "Draft"}</span></td>
-                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0 text-right">
-                    <div className="flex items-center gap-2 justify-end flex-wrap">
-                      <button className="inline-flex items-center gap-1 px-3.5 py-1 font-sans text-xs font-semibold rounded-full cursor-pointer transition-all min-h-[32px] bg-transparent text-primary border border-border-subtle hover:bg-primary-light hover:border-primary" onClick={() => navigate('/edit-pengumuman/' + p.id)}>Edit</button>
-                      <button className="inline-flex items-center gap-1 px-3.5 py-1 font-sans text-xs font-semibold rounded-full cursor-pointer transition-all min-h-[32px] bg-error/10 text-error border border-error/10 hover:bg-error hover:text-white" onClick={() => handleDelete(p.id, p.judul)}>Hapus</button>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle">{i + 1}</td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle"><span className="font-semibold text-text-primary">{p.judul}</span></td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle"><span className="font-mono text-[12px] text-text-primary">{formatDate(p.tanggal_pengumuman)}</span></td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle"><span className={statusClass[p.status_publikasi]}>{p.status_publikasi === "PUBLISHED" ? "Publik" : "Draft"}</span></td>
+                  <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle text-right">
+                    <div className="flex items-center gap-2 justify-end">
+                      <Button variant="outline" size="sm" onClick={() => openEditModal(p.id)}>Edit</Button>
+                      <Button variant="danger" size="sm" onClick={() => setConfirmDelete(p)}>Hapus</Button>
                     </div>
                   </td>
                 </tr>
@@ -116,6 +234,54 @@ export default function KetuaPengumuman() {
           </table>
         </div>
       </div>
+
+      <Modal
+        open={modalAdd}
+        onClose={() => setModalAdd(false)}
+        title="Tambah Pengumuman"
+        subtitle="Buat pengumuman baru untuk warga RT 08."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModalAdd(false)}>Batal</Button>
+            <Button onClick={handleAdd} disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan'}</Button>
+          </>
+        }
+      >
+        <form onSubmit={handleAdd}>{formFields}</form>
+      </Modal>
+
+      <Modal
+        open={!!modalEdit}
+        onClose={() => setModalEdit(null)}
+        title="Edit Pengumuman"
+        subtitle="Ubah pengumuman untuk warga RT 08."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModalEdit(null)}>Batal</Button>
+            <Button onClick={handleEdit} disabled={saving || loadingEdit}>{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</Button>
+          </>
+        }
+      >
+        {loadingEdit ? (
+          <div className="text-center py-8 text-text-muted text-[13.5px]">Memuat data...</div>
+        ) : (
+          <form onSubmit={handleEdit}>{formFields}</form>
+        )}
+      </Modal>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => handleDelete(confirmDelete?.id)}
+        title="Hapus Pengumuman"
+        message={`Apakah Anda yakin ingin menghapus pengumuman "${confirmDelete?.judul}"?`}
+        confirmText="Ya, Hapus"
+        variant="danger"
+      />
+
+      <AlertModal open={!!alert} onClose={() => { const cb = alert?.onClose; setAlert(null); cb?.() }} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

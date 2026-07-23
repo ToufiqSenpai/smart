@@ -1,3 +1,4 @@
+import { $Enums } from "../../generated/prisma/client.js";
 import * as duesRepository from "./repository.js";
 import type { AuthUser } from "../../middleware/auth.js";
 import { Decimal } from "@prisma/client/runtime/client";
@@ -328,11 +329,11 @@ export async function getBills(user: AuthUser) {
   for (const p of payments) {
     const key = `${p.idIuran}-${p.periode}`;
     const s = p.statusVerifikasi;
-    if (s === "VERIFIED" || s === "Terverifikasi") {
+    if (s === "VERIFIED") {
       statusMap.set(key, "VERIFIED");
-    } else if (s === "PENDING" || s === "Menunggu") {
+    } else if (s === "PENDING") {
       if (!statusMap.has(key)) statusMap.set(key, "PENDING");
-    } else if (s === "REJECTED" || s === "Ditolak") {
+    } else if (s === "REJECTED") {
       statusMap.set(key, "REJECTED");
     }
   }
@@ -468,6 +469,15 @@ export async function addPayment(
     };
   }
 
+  let statusVerifikasi: $Enums.StatusVerifikasi = "PENDING";
+
+  if (user.idPengurus) {
+    const otherOfficers = await duesRepository.countOtherOfficers(user.idPengurus);
+    if (otherOfficers === 0) {
+      statusVerifikasi = "VERIFIED";
+    }
+  }
+
   const result = await duesRepository.createPayment({
     idWarga: user.idWarga,
     idIuran: id_iuran,
@@ -477,11 +487,11 @@ export async function addPayment(
     metodeBayar: metode_bayar.trim(),
     jumlahBayar: new Decimal(jumlah_bayar),
     buktiPembayaran: bukti_pembayaran.trim(),
-    statusVerifikasi: "PENDING",
+    statusVerifikasi,
   });
 
   return {
-    message: "Pembayaran berhasil dikirim.",
+    message: statusVerifikasi === "VERIFIED" ? "Pembayaran berhasil." : "Pembayaran berhasil dikirim.",
     data: {
       id_pembayaran: result.idPembayaran,
       periode: result.periode,
@@ -602,7 +612,18 @@ export async function verifyPayment(
     };
   }
 
-  const result = await duesRepository.updatePaymentStatus(id, status);
+  if (payment.idWarga === user.idWarga) {
+    const otherOfficers = await duesRepository.countOtherOfficers(user.idPengurus!);
+    if (otherOfficers > 0) {
+      throw {
+        status: 403,
+        message: "Tidak bisa memverifikasi pembayaran sendiri",
+        code: "FORBIDDEN",
+      };
+    }
+  }
+
+  const result = await duesRepository.updatePaymentStatus(id, status as $Enums.StatusVerifikasi);
 
   return {
     message: "Status pembayaran berhasil diperbarui.",

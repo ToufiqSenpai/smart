@@ -1,3 +1,4 @@
+import { $Enums } from '../../generated/prisma/client.js';
 import { prisma } from '../../db/prisma.js';
 
 interface CreateAnnouncementData {
@@ -6,14 +7,14 @@ interface CreateAnnouncementData {
   isiPengumuman: string;
   lampiran?: string;
   tanggalPengumuman: Date;
-  statusPublikasi: string;
+  statusPublikasi: $Enums.StatusPublikasi;
 }
 
 interface UpdateAnnouncementData {
   judul?: string;
   isiPengumuman?: string;
   lampiran?: string;
-  statusPublikasi?: string;
+  statusPublikasi?: $Enums.StatusPublikasi;
 }
 
 export async function findAll() {

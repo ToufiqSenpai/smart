@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import AlertModal from "../../components/ui/AlertModal"
+import ConfirmModal from "../../components/ui/ConfirmModal"
 import { getBusinessById, validateBusiness } from "../../api/businesses.api"
 
 const statusMap = {
@@ -21,30 +23,29 @@ export default function KetuaDetailValidasiUMKM() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
-  const [toasts, setToasts] = useState([])
+  const [alert, setAlert] = useState(null)
+  const [confirm, setConfirm] = useState(null)
 
   useEffect(() => {
     getBusinessById(id)
       .then(res => setData(res.data))
-      .catch(err => addToast("error", "Gagal memuat data", err?.message || "Data UMKM tidak ditemukan"))
+      .catch(err => setAlert({ type: 'error', title: 'Gagal', message: err?.message || 'Data UMKM tidak ditemukan' }))
       .finally(() => setLoading(false))
   }, [id])
 
-  const addToast = (type, title, message) => {
-    const toastId = Date.now()
-    setToasts(prev => [...prev, { id: toastId, type, title, message }])
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== toastId)), 4000)
+  const handleAction = (status) => {
+    setConfirm({ status })
   }
 
-  const handleAction = (status) => {
-    if (!confirm(`${status === 'VERIFIED' ? 'Validasi' : 'Tolak'} UMKM "${data.nama_usaha}" milik ${data.pemilik}?`)) return
+  const handleConfirm = () => {
+    if (!confirm) return
     setActionLoading(true)
-    validateBusiness(id, { status })
+    validateBusiness(id, { status: confirm.status })
       .then(() => {
-        addToast(status === 'VERIFIED' ? "success" : "error", status === 'VERIFIED' ? "UMKM divalidasi!" : "UMKM ditolak", `UMKM ${data.nama_usaha} berhasil ${status === 'VERIFIED' ? 'divalidasi' : 'ditolak'}.`)
-        setTimeout(() => navigate("/validasi-umkm"), 1500)
+        setConfirm(null)
+        setAlert({ type: 'success', title: confirm.status === 'VERIFIED' ? 'UMKM divalidasi!' : 'UMKM ditolak', message: `UMKM ${data.nama_usaha} berhasil ${confirm.status === 'VERIFIED' ? 'divalidasi' : 'ditolak'}.`, onClose: () => { navigate("/validasi-umkm") } })
       })
-      .catch(err => addToast("error", "Gagal", err?.message || "Gagal memperbarui status"))
+      .catch(err => setAlert({ type: 'error', title: 'Gagal', message: err?.message || 'Gagal memperbarui status' }))
       .finally(() => setActionLoading(false))
   }
 
@@ -72,25 +73,6 @@ export default function KetuaDetailValidasiUMKM() {
 
   return (
     <DashboardLayout>
-      <div className="fixed bottom-8 right-8 z-[1000] flex flex-col gap-3 max-w-[360px]" style={{width: "calc(100% - 64px)"}}>
-        {toasts.map((t) => (
-          <div key={t.id} className={`flex items-start gap-4 p-5 bg-bg-card rounded-[14px] shadow-[0_20px_40px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.02)] border border-border-subtle animate-[slideInUp_0.3s_cubic-bezier(0.16,1,0.3,1)] ${t.type === "success" ? "border-t-success border-t-3" : "border-t-error border-t-3"}`}>
-            {t.type === "success" ? (
-              <svg className="w-4 h-4 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="m9 12 2 2 4-4" /></svg>
-            ) : (
-              <svg className="w-4 h-4 text-error" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-            )}
-            <div className="flex-1 text-[13px]">
-              <div className="font-bold text-text-primary mb-0.5">{t.title}</div>
-              <div className="text-text-secondary">{t.message}</div>
-            </div>
-            <button className="bg-transparent border-none text-text-muted cursor-pointer p-0.5 flex rounded-full hover:text-text-primary hover:bg-bg-hover transition-all" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}>
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-            </button>
-          </div>
-        ))}
-      </div>
-
       <button className="inline-flex items-center gap-2 text-text-secondary text-[13px] font-medium mb-6 hover:text-primary transition-colors cursor-pointer border-none bg-transparent font-sans" onClick={() => navigate("/validasi-umkm")}>
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
         Kembali ke validasi UMKM
@@ -166,6 +148,17 @@ export default function KetuaDetailValidasiUMKM() {
         </div>
       </div>
 
+      <ConfirmModal
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={handleConfirm}
+        title={confirm?.status === 'VERIFIED' ? 'Validasi UMKM' : 'Tolak UMKM'}
+        message={confirm ? `${confirm.status === 'VERIFIED' ? 'Validasi' : 'Tolak'} UMKM "${data?.nama_usaha}" milik ${data?.pemilik}?` : ''}
+        confirmText={confirm?.status === 'VERIFIED' ? 'Ya, Validasi' : 'Ya, Tolak'}
+        variant={confirm?.status === 'VERIFIED' ? 'success' : 'danger'}
+      />
+
+      <AlertModal open={!!alert} onClose={() => { const cb = alert?.onClose; setAlert(null); cb?.() }} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

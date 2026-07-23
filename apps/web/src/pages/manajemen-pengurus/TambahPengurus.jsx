@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import AlertModal from "../../components/ui/AlertModal"
 import { getResidents, updateOfficerRole } from "../../api/residents.api"
 
 var jabatanOptions = [
@@ -18,6 +19,7 @@ export default function TambahPengurus() {
   const [jabatan, setJabatan] = useState('')
   const [periode, setPeriode] = useState('')
   const [loading, setLoading] = useState(false)
+  const [alert, setAlert] = useState(null)
 
   useEffect(() => {
     getResidents({ status: 'AKTIF' })
@@ -31,10 +33,9 @@ export default function TambahPengurus() {
     setLoading(true)
     try {
       await updateOfficerRole(selectedWarga, { jabatan, periodeJabatan: periode })
-      alert('Pengurus berhasil ditambahkan!')
-      navigate('/kelola-pengurus')
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Pengurus berhasil ditambahkan!', onClose: () => { navigate('/kelola-pengurus') } })
     } catch (err) {
-      alert('Gagal: ' + (err?.message || 'Terjadi kesalahan'))
+      setAlert({ type: 'error', title: 'Gagal', message: err?.message || 'Terjadi kesalahan' })
     } finally {
       setLoading(false)
     }
@@ -84,6 +85,8 @@ export default function TambahPengurus() {
           </div>
         </form>
       </div>
+
+      <AlertModal open={!!alert} onClose={() => { const cb = alert?.onClose; setAlert(null); cb?.() }} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

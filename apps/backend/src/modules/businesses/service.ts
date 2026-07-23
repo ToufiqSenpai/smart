@@ -1,3 +1,4 @@
+import { $Enums } from '../../generated/prisma/client.js';
 import * as businessRepository from './repository.js';
 import type { AuthUser } from '../../middleware/auth.js';
 
@@ -77,6 +78,6 @@ export async function validateBusiness(businessId: string, user: AuthUser, statu
     throw { status: 404, message: 'UMKM tidak ditemukan', code: 'NOT_FOUND' };
   }
 
-  await businessRepository.updateStatus(businessId, status, user.idPengurus);
+  await businessRepository.updateStatus(businessId, status as $Enums.StatusVerifikasi, user.idPengurus);
   return { message: 'Status UMKM berhasil diperbarui.' };
 }

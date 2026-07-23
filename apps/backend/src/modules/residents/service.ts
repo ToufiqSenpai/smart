@@ -1,3 +1,4 @@
+import { $Enums } from '../../generated/prisma/client.js';
 import bcrypt from 'bcrypt';
 import * as residentRepository from './repository.js';
 import type { AuthUser } from '../../middleware/auth.js';
@@ -45,7 +46,7 @@ export async function register(data: {
 }
 
 export async function listResidents(user: AuthUser, query: { search?: string; status?: string }) {
-  return residentRepository.findAllWarga(query.search, query.status);
+  return residentRepository.findAllWarga(query.search, query.status as $Enums.StatusKeanggotaan | undefined);
 }
 
 export async function getResidentById(residentId: string) {
@@ -85,7 +86,7 @@ export async function verifyResident(residentId: string, status: string) {
     throw { status: 404, message: 'Data warga tidak ditemukan', code: 'NOT_FOUND' };
   }
 
-  await residentRepository.updateVerificationStatus(residentId, status);
+  await residentRepository.updateVerificationStatus(residentId, status as $Enums.StatusKeanggotaan);
   return { message: 'Status keanggotaan berhasil diperbarui.' };
 }
 

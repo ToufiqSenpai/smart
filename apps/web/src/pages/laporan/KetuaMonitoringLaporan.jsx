@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import AlertModal from "../../components/ui/AlertModal"
 import { getIssues } from "../../api/issues.api"
 
 function formatDate(dateStr) {
@@ -24,6 +25,7 @@ export default function KetuaMonitoringLaporan() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
+  const [alert, setAlert] = useState(null)
 
   useEffect(() => {
     getIssues()
@@ -115,7 +117,7 @@ export default function KetuaMonitoringLaporan() {
                     <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0"><span className={"inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] font-bold border " + status.class} dangerouslySetInnerHTML={{ __html: status.icon + ' ' + status.label }} /></td>
                     <td className="px-4 py-3 border-b border-border-subtle text-text-muted align-middle last:border-b-0 text-right">
                       <div className="flex items-center gap-2 justify-end flex-wrap">
-                        <button className="inline-flex items-center gap-1 px-3.5 py-1 font-sans text-xs font-semibold rounded-full cursor-pointer transition-all min-h-[32px] bg-transparent text-primary border border-border-subtle hover:bg-primary-light hover:border-primary" onClick={() => alert('Detail laporan ' + item.kategori_kendala)}>
+                        <button className="inline-flex items-center gap-1 px-3.5 py-1 font-sans text-xs font-semibold rounded-full cursor-pointer transition-all min-h-[32px] bg-transparent text-primary border border-border-subtle hover:bg-primary-light hover:border-primary" onClick={() => setAlert({ type: 'info', title: 'Detail Laporan', message: 'Detail laporan ' + item.kategori_kendala })}>
                           <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
                           Detail
                         </button>
@@ -128,6 +130,8 @@ export default function KetuaMonitoringLaporan() {
           </table>
         </div>
       </div>
+
+      <AlertModal open={!!alert} onClose={() => setAlert(null)} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

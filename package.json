@@ -13,7 +13,10 @@
     "build:web": "npm run build -w apps/web",
     "build:backend": "npm run build -w apps/backend",
     "build": "npm run build -w apps/backend && npm run build -w apps/web",
-    "start:backend": "npm run start -w apps/backend"
+    "start:backend": "npm run start -w apps/backend",
+    "test": "npm run test -w apps/web",
+    "test:run": "npm run test:run -w apps/web",
+    "test:e2e": "npm run test:e2e -w apps/web"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

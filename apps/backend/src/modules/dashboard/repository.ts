@@ -1,3 +1,4 @@
+import { $Enums } from "../../generated/prisma/client.js";
 import { prisma } from "../../db/prisma.js";
 
 export async function findMasyarakatById(id: string) {
@@ -14,7 +15,7 @@ export async function countAllWarga() {
   return prisma.warga.count();
 }
 
-export async function countWargaByStatus(status: string) {
+export async function countWargaByStatus(status: $Enums.StatusKeanggotaan) {
   return prisma.warga.count({ where: { statusKeanggotaan: status } });
 }
 
@@ -38,7 +39,7 @@ export async function countIuranAktif() {
   return prisma.iuran.count({ where: { statusAktif: true } });
 }
 
-export async function countPengumumanByStatus(status: string) {
+export async function countPengumumanByStatus(status: $Enums.StatusPublikasi) {
   return prisma.pengumuman.count({ where: { statusPublikasi: status } });
 }
 
@@ -79,7 +80,7 @@ export async function countPaymentsPending() {
   return prisma.pembayaranIuran.count({ where: { statusVerifikasi: "PENDING" } });
 }
 
-export async function countIssuesByStatus(status: string) {
+export async function countIssuesByStatus(status: $Enums.StatusLaporan) {
   return prisma.laporanKendala.count({ where: { statusLaporan: status } });
 }
 

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import Modal from "../../components/ui/Modal"
+import Button from "../../components/ui/Button"
 import { getAllPayments, verifyPayment } from "../../api/dues.api"
 
 function formatRupiah(angka) {
@@ -25,12 +27,11 @@ const badgeLabel = {
 }
 
 export default function KetuaVerifikasiPembayaran() {
-
-  var [search, setSearch] = useState('')
-  var [statusFilter, setStatusFilter] = useState('all')
-  var [data, setData] = useState([])
-  var [loading, setLoading] = useState(true)
-  var [modalPayment, setModalPayment] = useState(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [modalPayment, setModalPayment] = useState(null)
 
   useEffect(() => {
     getAllPayments().then(res => setData(res.data)).catch(err => console.error('Gagal memuat:', err)).finally(() => setLoading(false))
@@ -44,9 +45,6 @@ export default function KetuaVerifikasiPembayaran() {
   })
 
   const pendingCount = data.filter(p => p.status_verifikasi === "PENDING").length
-
-
-
 
   function handleApprove(id) {
     verifyPayment(id, "VERIFIED").then(() => {
@@ -106,35 +104,19 @@ export default function KetuaVerifikasiPembayaran() {
         .empty-state h3 { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--ink-black); margin-bottom: var(--sp-8); }
         .empty-state p { font-size: 14px; }
         .icon { width: 18px; height: 18px; flex-shrink: 0; stroke-width: 2px; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: var(--sp-24); }
-        .modal-overlay.active { display: flex; }
-        .modal { background: var(--white); border-radius: var(--radius-lg); max-width: 560px; width: 100%; box-shadow: 0 40px 80px rgba(0,0,0,0.12); max-height: 90vh; overflow-y: auto; }
-        .modal-header { padding: var(--sp-24) var(--sp-28); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; }
-        .modal-header h3 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: var(--ink-black); letter-spacing: -0.2px; }
-        .modal-header .modal-close { background: none; border: none; color: var(--ink-subtle); cursor: pointer; padding: 4px; display: flex; border-radius: 50%; transition: all 0.2s ease; }
-        .modal-header .modal-close:hover { background: var(--bg-neutral); color: var(--ink-black); }
-        .modal-body { padding: var(--sp-28); }
-        .modal-body .detail-row { display: flex; justify-content: space-between; padding: var(--sp-8) 0; border-bottom: 1px solid var(--border-subtle); font-size: 13.5px; }
-        .modal-body .detail-row:last-child { border-bottom: none; }
-        .modal-body .detail-row .label { color: var(--ink-subtle); font-weight: 500; }
-        .modal-body .detail-row .value { color: var(--ink-black); font-weight: 600; text-align: right; }
-        .modal-body .detail-row .value.mono { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
-        .modal-body .detail-row .value .status-badge { font-size: 11px; padding: 3px 12px; }
-        .modal-body .bukti-section { margin-top: var(--sp-16); padding-top: var(--sp-16); border-top: 1px solid var(--border-subtle); }
-        .modal-body .bukti-section .bukti-label { font-size: 13px; font-weight: 600; color: var(--ink-black); margin-bottom: var(--sp-8); display: block; }
-        .modal-body .bukti-image { border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-subtle); background: var(--bg-neutral); width: 100%; }
-        .modal-body .bukti-image img { width: 100%; height: auto; max-height: 400px; object-fit: contain; display: block; background: var(--white); }
-        .modal-body .bukti-image .no-bukti { padding: var(--sp-32); text-align: center; color: var(--ink-subtle); font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); }
-        .modal-body .bukti-image .no-bukti .icon { width: 40px; height: 40px; color: var(--border-subtle); }
-        .modal-footer { padding: var(--sp-16) var(--sp-28); border-top: 1px solid var(--border-subtle); display: flex; gap: var(--sp-12); justify-content: flex-end; flex-wrap: wrap; }
-        .modal-footer .btn { padding: 8px 24px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 600; border: none; border-radius: var(--radius-pill); cursor: pointer; min-height: 40px; transition: all 0.2s ease; }
-        .modal-footer .btn-secondary { background: var(--bg-neutral); color: var(--ink-muted); border: 1px solid var(--border-subtle); }
-        .modal-footer .btn-secondary:hover { background: var(--bg-hover); }
-        .modal-footer .btn-success { background: var(--status-green); color: var(--white); }
-        .modal-footer .btn-success:hover { background: #15804c; }
-        .modal-footer .btn-danger { background: var(--status-red); color: var(--white); }
-        .modal-footer .btn-danger:hover { background: #a83226; }
-        @media (max-width: 768px) { .page-title { font-size: 26px; } .toolbar { flex-direction: column; align-items: stretch; padding: var(--sp-16); } .toolbar-left { flex-direction: column; align-items: stretch; } .search-wrapper { min-width: unset; } .table-wrapper { padding: 0 var(--sp-16) var(--sp-16) var(--sp-16); } table thead th, table tbody td { padding: 8px 10px; font-size: 12px; } .action-group { flex-wrap: wrap; gap: 4px; justify-content: flex-start; } .btn-sm { font-size: 11px; padding: 3px 10px; min-height: 28px; } .modal { margin: var(--sp-16); } .modal-body .detail-row { font-size: 13px; flex-direction: column; gap: 2px; } .modal-body .detail-row .value { text-align: left; } .modal-footer { flex-wrap: wrap; } .modal-footer .btn { flex: 1; min-width: 80px; justify-content: center; } }
+        .detail-row { display: flex; justify-content: space-between; padding: var(--sp-8) 0; border-bottom: 1px solid var(--border-subtle); font-size: 13.5px; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-row .label { color: var(--ink-subtle); font-weight: 500; }
+        .detail-row .value { color: var(--ink-black); font-weight: 600; text-align: right; }
+        .detail-row .value.mono { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+        .detail-row .value .status-badge { font-size: 11px; padding: 3px 12px; }
+        .bukti-section { margin-top: var(--sp-16); padding-top: var(--sp-16); border-top: 1px solid var(--border-subtle); }
+        .bukti-section .bukti-label { font-size: 13px; font-weight: 600; color: var(--ink-black); margin-bottom: var(--sp-8); display: block; }
+        .bukti-image { border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-subtle); background: var(--bg-neutral); width: 100%; }
+        .bukti-image img { width: 100%; height: auto; max-height: 400px; object-fit: contain; display: block; background: var(--white); }
+        .bukti-image .no-bukti { padding: var(--sp-32); text-align: center; color: var(--ink-subtle); font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: var(--sp-8); }
+        .bukti-image .no-bukti .icon { width: 40px; height: 40px; color: var(--border-subtle); }
+        @media (max-width: 768px) { .page-title { font-size: 26px; } .toolbar { flex-direction: column; align-items: stretch; padding: var(--sp-16); } .toolbar-left { flex-direction: column; align-items: stretch; } .search-wrapper { min-width: unset; } .table-wrapper { padding: 0 var(--sp-16) var(--sp-16) var(--sp-16); } table thead th, table tbody td { padding: 8px 10px; font-size: 12px; } .action-group { flex-wrap: wrap; gap: 4px; justify-content: flex-start; } .btn-sm { font-size: 11px; padding: 3px 10px; min-height: 28px; } }
       `}</style>
 
       <div className="hero-row">
@@ -220,76 +202,73 @@ export default function KetuaVerifikasiPembayaran() {
         </div>
       </div>
 
-      <div className={"modal-overlay" + (modalPayment ? " active" : "")}>
-        <div className="modal">
-          <div className="modal-header">
-            <h3>Detail Pembayaran</h3>
-            <button className="modal-close" onClick={() => setModalPayment(null)} aria-label="Tutup">
-              <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="5" x2="19" y2="19" /><line x1="19" y1="5" x2="5" y2="19" /></svg>
-            </button>
-          </div>
-          {modalPayment && (
-            <>
-              <div className="modal-body">
-                <div className="detail-row">
-                  <span className="label">Nama Warga</span>
-                  <span className="value">{modalPayment.nama_warga}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="label">Iuran</span>
-                  <span className="value">{modalPayment.nama_iuran}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="label">Jenis</span>
-                  <span className="value">{modalPayment.jenis_iuran}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="label">Periode</span>
-                  <span className="value mono">{modalPayment.periode}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="label">Nominal</span>
-                  <span className="value mono">{formatRupiah(modalPayment.jumlah_bayar)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="label">Metode Bayar</span>
-                  <span className="value">{modalPayment.metode_bayar}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="label">Tanggal Bayar</span>
-                  <span className="value mono">{formatDate(modalPayment.tanggal_bayar)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="label">Status</span>
-                  <span className="value"><span className={"status-badge " + (badgeClass[modalPayment.status_verifikasi] || 'menunggu')}>{badgeLabel[modalPayment.status_verifikasi] || 'Menunggu'}</span></span>
-                </div>
-                <div className="bukti-section">
-                  <span className="bukti-label">Bukti Pembayaran</span>
-                  <div className="bukti-image">
-                    {modalPayment.bukti_pembayaran ? (
-                      <img src={modalPayment.bukti_pembayaran} alt="Bukti pembayaran" />
-                    ) : (
-                      <div className="no-bukti">
-                        <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
-                        <span>Tidak ada bukti pembayaran</span>
-                      </div>
-                    )}
+      <Modal
+        open={!!modalPayment}
+        onClose={() => setModalPayment(null)}
+        title="Detail Pembayaran"
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModalPayment(null)}>Tutup</Button>
+            {modalPayment?.status_verifikasi === "PENDING" && (
+              <>
+                <Button variant="danger" onClick={() => handleReject(modalPayment.id_pembayaran)}>Tolak</Button>
+                <Button variant="success" onClick={() => handleApprove(modalPayment.id_pembayaran)}>Verifikasi</Button>
+              </>
+            )}
+          </>
+        }
+      >
+        {modalPayment && (
+          <>
+            <div className="detail-row">
+              <span className="label">Nama Warga</span>
+              <span className="value">{modalPayment.nama_warga}</span>
+            </div>
+            <div className="detail-row">
+              <span className="label">Iuran</span>
+              <span className="value">{modalPayment.nama_iuran}</span>
+            </div>
+            <div className="detail-row">
+              <span className="label">Jenis</span>
+              <span className="value">{modalPayment.jenis_iuran}</span>
+            </div>
+            <div className="detail-row">
+              <span className="label">Periode</span>
+              <span className="value mono">{modalPayment.periode}</span>
+            </div>
+            <div className="detail-row">
+              <span className="label">Nominal</span>
+              <span className="value mono">{formatRupiah(modalPayment.jumlah_bayar)}</span>
+            </div>
+            <div className="detail-row">
+              <span className="label">Metode Bayar</span>
+              <span className="value">{modalPayment.metode_bayar}</span>
+            </div>
+            <div className="detail-row">
+              <span className="label">Tanggal Bayar</span>
+              <span className="value mono">{formatDate(modalPayment.tanggal_bayar)}</span>
+            </div>
+            <div className="detail-row">
+              <span className="label">Status</span>
+              <span className="value"><span className={"status-badge " + (badgeClass[modalPayment.status_verifikasi] || 'menunggu')}>{badgeLabel[modalPayment.status_verifikasi] || 'Menunggu'}</span></span>
+            </div>
+            <div className="bukti-section">
+              <span className="bukti-label">Bukti Pembayaran</span>
+              <div className="bukti-image">
+                {modalPayment.bukti_pembayaran ? (
+                  <img src={modalPayment.bukti_pembayaran} alt="Bukti pembayaran" />
+                ) : (
+                  <div className="no-bukti">
+                    <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+                    <span>Tidak ada bukti pembayaran</span>
                   </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setModalPayment(null)}>Tutup</button>
-                {modalPayment.status_verifikasi === "PENDING" && (
-                  <>
-                    <button className="btn btn-danger" onClick={() => handleReject(modalPayment.id_pembayaran)}>Tolak</button>
-                    <button className="btn btn-success" onClick={() => handleApprove(modalPayment.id_pembayaran)}>Verifikasi</button>
-                  </>
                 )}
               </div>
-            </>
-          )}
-        </div>
-      </div>
+            </div>
+          </>
+        )}
+      </Modal>
     </DashboardLayout>
   )
 }

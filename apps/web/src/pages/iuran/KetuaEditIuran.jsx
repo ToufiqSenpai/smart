@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import AlertModal from "../../components/ui/AlertModal"
 import { getDueById, updateDue } from "../../api/dues.api"
 
 export default function KetuaEditIuran() {
@@ -10,6 +11,7 @@ export default function KetuaEditIuran() {
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [alert, setAlert] = useState(null)
 
   useEffect(() => {
     getDueById(id)
@@ -22,7 +24,7 @@ export default function KetuaEditIuran() {
           tanggal_jatuh_tempo: d.tanggal_jatuh_tempo || '',
         })
       })
-      .catch(() => alert('Iuran tidak ditemukan'))
+      .catch(() => setAlert({ type: 'error', title: 'Gagal', message: 'Iuran tidak ditemukan' }))
       .finally(() => setLoading(false))
   }, [id])
 
@@ -52,10 +54,9 @@ export default function KetuaEditIuran() {
         nominal: Number(form.nominal),
         tanggal_jatuh_tempo: form.tanggal_jatuh_tempo,
       })
-      alert('Iuran berhasil diperbarui!')
-      navigate('/kelola-iuran')
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Iuran berhasil diperbarui!', onClose: () => { navigate('/kelola-iuran') } })
     } catch (err) {
-      alert('Gagal: ' + (err?.message || 'Terjadi kesalahan'))
+      setAlert({ type: 'error', title: 'Gagal', message: err?.message || 'Terjadi kesalahan' })
     } finally {
       setSaving(false)
     }
@@ -118,6 +119,8 @@ export default function KetuaEditIuran() {
           </div>
         </form>
       </div>
+
+      <AlertModal open={!!alert} onClose={() => { const cb = alert?.onClose; setAlert(null); cb?.() }} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

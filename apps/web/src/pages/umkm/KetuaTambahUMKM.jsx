@@ -1,8 +1,11 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import AlertModal from "../../components/ui/AlertModal"
 
 export default function KetuaTambahUMKM() {
   const navigate = useNavigate()
+  const [alert, setAlert] = useState(null)
 
   return (
     <DashboardLayout>
@@ -48,7 +51,7 @@ export default function KetuaTambahUMKM() {
           <p>Daftarkan usaha mikro kecil menengah baru untuk warga RT 08.</p>
         </div>
 
-        <form id="umkmForm" noValidate onSubmit={(e) => { e.preventDefault(); alert('Fitur tambah UMKM oleh Ketua belum tersedia. Gunakan akun warga.'); }}>
+        <form id="umkmForm" noValidate onSubmit={(e) => { e.preventDefault(); setAlert({ type: 'info', title: 'Informasi', message: 'Fitur tambah UMKM oleh Ketua belum tersedia. Gunakan akun warga.' }); }}>
           <div className="form-group">
             <label htmlFor="namaUsaha">Nama Usaha</label>
             <input type="text" className="form-control" id="namaUsaha" placeholder="Contoh: Warung Makan Sejahtera" required />
@@ -130,6 +133,8 @@ export default function KetuaTambahUMKM() {
           </div>
         </form>
       </div>
+
+      <AlertModal open={!!alert} onClose={() => setAlert(null)} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

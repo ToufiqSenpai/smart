@@ -1,13 +1,35 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
-import { getOfficers } from "../../api/residents.api"
+import Modal from "../../components/ui/Modal"
+import Button from "../../components/ui/Button"
+import ConfirmModal from "../../components/ui/ConfirmModal"
+import AlertModal from "../../components/ui/AlertModal"
+import { useAuth } from "../../context/AuthContext"
+import { getOfficers, getResidents, updateOfficerRole } from "../../api/residents.api"
+
+const jabatanOptions = [
+  { value: 'KETUA_RT', label: 'Ketua RT' },
+  { value: 'SEKRETARIS', label: 'Sekretaris' },
+  { value: 'BENDAHARA', label: 'Bendahara' },
+  { value: 'HUMAS', label: 'Humas' },
+  { value: 'KEAMANAN', label: 'Keamanan' },
+]
 
 export default function KelolaPengurus() {
-  var navigate = useNavigate()
-  var [search, setSearch] = useState('')
-  var [data, setData] = useState([])
-  var [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+  const [search, setSearch] = useState('')
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const [modalAdd, setModalAdd] = useState(false)
+  const [modalEdit, setModalEdit] = useState(null)
+  const [wargaList, setWargaList] = useState([])
+  const [selectedWarga, setSelectedWarga] = useState('')
+  const [jabatan, setJabatan] = useState('')
+  const [periode, setPeriode] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [alert, setAlert] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
 
   useEffect(() => {
     getOfficers()
@@ -16,9 +38,105 @@ export default function KelolaPengurus() {
       .finally(() => setLoading(false))
   }, [])
 
-  var filteredData = data.filter(function(p) {
-    return p.nama.toLowerCase().includes(search.toLowerCase()) || p.nik.includes(search) || p.jabatan.toLowerCase().includes(search.toLowerCase())
-  })
+  const filteredData = data
+    .filter(p => p.nama !== user?.nama)
+    .filter(p => {
+      return p.nama.toLowerCase().includes(search.toLowerCase()) ||
+             p.nik.includes(search) ||
+             p.jabatan.toLowerCase().includes(search.toLowerCase())
+    })
+
+  function loadWarga() {
+    getResidents({ status: 'AKTIF' })
+      .then(res => {
+        const existingIds = new Set(data.map(o => o.idWarga))
+        setWargaList(res.data.filter(w => !existingIds.has(w.id)))
+      })
+      .catch(err => console.error(err))
+  }
+
+  function openAddModal() {
+    setSelectedWarga('')
+    setJabatan('')
+    setPeriode('')
+    loadWarga()
+    setModalAdd(true)
+  }
+
+  function openEditModal(officer) {
+    setSelectedWarga(officer.idWarga || '')
+    setJabatan(officer.jabatan || '')
+    setPeriode(officer.periodeJabatan || '')
+    setModalEdit(officer)
+  }
+
+  async function handleAdd(e) {
+    e.preventDefault()
+    if (!selectedWarga || !jabatan) return
+    setSaving(true)
+    try {
+      await updateOfficerRole(selectedWarga, { jabatan, periodeJabatan: periode })
+      const res = await getOfficers()
+      setData(res.data)
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Pengurus berhasil ditambahkan', onClose: () => { setModalAdd(false) } })
+    } catch (err) {
+      setAlert({ type: 'error', title: 'Gagal', message: err?.response?.data?.message || err?.message || 'Terjadi kesalahan' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleEdit(e) {
+    e.preventDefault()
+    if (!jabatan) return
+    setSaving(true)
+    try {
+      await updateOfficerRole(selectedWarga, { jabatan, periodeJabatan: periode })
+      const res = await getOfficers()
+      setData(res.data)
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Pengurus berhasil diperbarui', onClose: () => { setModalEdit(null) } })
+    } catch (err) {
+      setAlert({ type: 'error', title: 'Gagal', message: err?.response?.data?.message || err?.message || 'Terjadi kesalahan' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete(officer) {
+    try {
+      await updateOfficerRole(officer.idWarga, { jabatan: null })
+      setData(prev => prev.filter(p => p.id !== officer.id))
+      setAlert({ type: 'success', title: 'Berhasil', message: `${officer.nama} sudah tidak menjadi pengurus` })
+    } catch (err) {
+      setAlert({ type: 'error', title: 'Gagal', message: err?.response?.data?.message || err?.message || 'Terjadi kesalahan' })
+    }
+    setConfirmDelete(null)
+  }
+
+  const formFields = (
+    <>
+      {!modalEdit && (
+        <div className="mb-5">
+          <label className="block text-[13px] font-semibold text-text-primary mb-1">Pilih Warga</label>
+          <select className="w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-white border border-border-subtle rounded-[14px] outline-none" value={selectedWarga} onChange={(e) => setSelectedWarga(e.target.value)}>
+            <option value="">-- Pilih Warga --</option>
+            {wargaList.map(w => <option key={w.id} value={w.id}>{w.nama} - {w.nik}</option>)}
+          </select>
+        </div>
+      )}
+      <div className="mb-5">
+        <label className="block text-[13px] font-semibold text-text-primary mb-1">Jabatan</label>
+        <select className="w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-white border border-border-subtle rounded-[14px] outline-none" value={jabatan} onChange={(e) => setJabatan(e.target.value)}>
+          <option value="">-- Pilih Jabatan --</option>
+          {jabatanOptions.map(j => <option key={j.value} value={j.value}>{j.label}</option>)}
+        </select>
+      </div>
+      <div className="mb-5">
+        <label className="block text-[13px] font-semibold text-text-primary mb-1">Periode Jabatan</label>
+        <input type="text" className="w-full px-[14px] py-[10px] font-sans text-sm text-text-primary bg-white border border-border-subtle rounded-[14px] outline-none" placeholder="Contoh: 2026-2028" value={periode} onChange={(e) => setPeriode(e.target.value)} />
+      </div>
+    </>
+  )
 
   return (
     <DashboardLayout>
@@ -36,10 +154,10 @@ export default function KelolaPengurus() {
           </div>
           <span className="text-xs font-semibold text-text-muted px-3.5 py-1.5 bg-bg-card rounded-full border border-border-subtle shadow-lux">{filteredData.length} pengurus</span>
         </div>
-        <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] text-[13px] font-semibold font-sans cursor-pointer transition-all border-none bg-primary text-white shadow-[0_4px_12px_rgba(30,75,133,0.2)] hover:bg-[#163d6e] hover:-translate-y-px" onClick={() => navigate('/tambah-pengurus')}>
-          <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+        <Button onClick={openAddModal}>
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
           Tambah Pengurus
-        </button>
+        </Button>
       </div>
 
       <div className="bg-bg-card rounded-[20px] border border-border-subtle shadow-lux overflow-hidden">
@@ -63,7 +181,8 @@ export default function KelolaPengurus() {
                 <tr><td colSpan="5" className="text-center py-12 text-text-muted text-[13.5px]">Memuat data...</td></tr>
               ) : filteredData.length === 0 ? (
                 <tr><td colSpan="5" className="text-center py-12 text-text-muted text-[13.5px]">Tidak ada data pengurus.</td></tr>
-              ) : filteredData.map(function(p, index) {
+              ) : filteredData.map((p, index) => {
+                const isKetua = p.jabatan === 'CHAIRPERSON' || p.jabatan === 'KETUA_RT'
                 return (
                   <tr key={p.id} className="hover:bg-primary-lighter">
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{index + 1}</td>
@@ -71,15 +190,18 @@ export default function KelolaPengurus() {
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 font-mono text-[13px]">{p.nik}</td>
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6">{p.jabatan}</td>
                     <td className="text-[13.5px] text-text-muted px-5 py-3.5 border-t border-border-subtle pl-6 text-right pr-6">
-                      <div className="flex items-center gap-2 justify-end flex-wrap">
-                        <button className="inline-flex items-center gap-1 px-3.5 py-1 font-sans text-xs font-semibold rounded-full cursor-pointer transition-all min-h-[32px] bg-transparent text-primary border border-border-subtle hover:bg-primary-light hover:border-primary" onClick={() => navigate('/edit-pengurus/' + p.id)}>
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                          Edit
-                        </button>
-                        <button className="inline-flex items-center gap-1 px-3.5 py-1 font-sans text-xs font-semibold rounded-full cursor-pointer transition-all min-h-[32px] bg-error/10 text-error border border-error/10 hover:bg-error hover:text-white" onClick={() => { if (window.confirm('Hapus pengurus ' + p.nama + '?')) { /* handle delete */ } }}>
-                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-                          Hapus
-                        </button>
+                      <div className="flex items-center gap-2 justify-end">
+                        {!isKetua && (
+                          <Button variant="outline" size="sm" onClick={() => openEditModal(p)}>Edit</Button>
+                        )}
+                        {!isKetua && (
+                          <Button variant="danger" size="sm" onClick={() => setConfirmDelete(p)}>
+                            Hapus
+                          </Button>
+                        )}
+                        {isKetua && (
+                          <span className="text-[11px] text-text-muted italic">Ketua RT</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -89,6 +211,50 @@ export default function KelolaPengurus() {
           </table>
         </div>
       </div>
+
+      <Modal
+        open={modalAdd}
+        onClose={() => setModalAdd(false)}
+        title="Tambah Pengurus RT"
+        subtitle="Tambahkan pengurus baru untuk kepengurusan RT 08."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModalAdd(false)}>Batal</Button>
+            <Button onClick={handleAdd} disabled={saving || !selectedWarga || !jabatan}>{saving ? 'Menyimpan...' : 'Simpan'}</Button>
+          </>
+        }
+      >
+        <form onSubmit={handleAdd}>{formFields}</form>
+      </Modal>
+
+      <Modal
+        open={!!modalEdit}
+        onClose={() => setModalEdit(null)}
+        title="Edit Pengurus RT"
+        subtitle="Edit data kepengurusan RT 08."
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setModalEdit(null)}>Batal</Button>
+            <Button onClick={handleEdit} disabled={saving || !jabatan}>{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</Button>
+          </>
+        }
+      >
+        <form onSubmit={handleEdit}>{formFields}</form>
+      </Modal>
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => handleDelete(confirmDelete)}
+        title="Hapus Pengurus"
+        message={`Apakah Anda yakin ingin menghapus "${confirmDelete?.nama}" dari kepengurusan RT?`}
+        confirmText="Ya, Hapus"
+        variant="danger"
+      />
+
+      <AlertModal open={!!alert} onClose={() => { const cb = alert?.onClose; setAlert(null); cb?.() }} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }

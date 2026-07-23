@@ -1,3 +1,4 @@
+import { $Enums } from "../../generated/prisma/client.js";
 import { prisma } from "../../db/prisma.js";
 import { Decimal } from "@prisma/client/runtime/client";
 
@@ -116,7 +117,7 @@ export async function createPayment(data: {
   metodeBayar: string;
   jumlahBayar: Decimal;
   buktiPembayaran: string;
-  statusVerifikasi: string;
+  statusVerifikasi: $Enums.StatusVerifikasi;
 }) {
   return prisma.pembayaranIuran.create({
     data,
@@ -177,7 +178,7 @@ export async function findPaymentById(id: string) {
 
 export async function updatePaymentStatus(
   id: string,
-  statusVerifikasi: string,
+  statusVerifikasi: $Enums.StatusVerifikasi,
 ) {
   return prisma.pembayaranIuran.update({
     where: { idPembayaran: id },
@@ -200,6 +201,12 @@ export async function findPaymentsByWargaId(idWarga: string) {
       },
     },
     orderBy: { tanggalBayar: "desc" },
+  });
+}
+
+export async function countOtherOfficers(excludeIdPengurus: string) {
+  return prisma.pengurusRt.count({
+    where: { idPengurus: { not: excludeIdPengurus } },
   });
 }
 

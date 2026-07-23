@@ -1,3 +1,4 @@
+import { $Enums } from '../../generated/prisma/client.js';
 import * as issueRepository from './repository.js';
 import type { AuthUser } from '../../middleware/auth.js';
 
@@ -83,7 +84,7 @@ export async function updateIssueStatus(issueId: string, user: AuthUser, status:
     throw { status: 404, message: 'Laporan tidak ditemukan', code: 'NOT_FOUND' };
   }
 
-  await issueRepository.updateStatus(issueId, status as issueRepository.IssueStatus);
+  await issueRepository.updateStatus(issueId, status as $Enums.StatusLaporan);
 
   if (user.idPengurus) {
     await issueRepository.updateFollowUp(issueId, issue.tanggapan || '', user.idPengurus);

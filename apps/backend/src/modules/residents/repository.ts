@@ -1,3 +1,4 @@
+import { $Enums } from '../../generated/prisma/client.js';
 import { prisma } from '../../db/prisma.js';
 
 export async function createMasyarakat(data: {
@@ -6,7 +7,7 @@ export async function createMasyarakat(data: {
   return prisma.masyarakat.create({ data });
 }
 
-export async function createWarga(data: { idMasyarakat: string; statusKeanggotaan: string }) {
+export async function createWarga(data: { idMasyarakat: string; statusKeanggotaan: $Enums.StatusKeanggotaan }) {
   return prisma.warga.create({ data });
 }
 
@@ -22,7 +23,7 @@ export async function findMasyarakatByUsername(username: string) {
   return prisma.masyarakat.findFirst({ where: { username } });
 }
 
-export async function findAllWarga(search?: string, status?: string) {
+export async function findAllWarga(search?: string, status?: $Enums.StatusKeanggotaan) {
   const where: any = {};
   if (status) where.statusKeanggotaan = status;
   if (search) {
@@ -100,7 +101,7 @@ export async function findPendingVerifications() {
   }));
 }
 
-export async function updateVerificationStatus(wargaId: string, status: string) {
+export async function updateVerificationStatus(wargaId: string, status: $Enums.StatusKeanggotaan) {
   return prisma.warga.update({
     where: { idWarga: wargaId },
     data: { statusKeanggotaan: status },

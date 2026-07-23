@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import DashboardLayout from "../../components/layout/DashboardLayout"
+import AlertModal from "../../components/ui/AlertModal"
 import { getExpenseById, updateExpense } from "../../api/finance.api"
 
 export default function KetuaEditPengeluaranKas() {
@@ -10,6 +11,7 @@ export default function KetuaEditPengeluaranKas() {
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [alert, setAlert] = useState(null)
 
   useEffect(() => {
     getExpenseById(id)
@@ -22,7 +24,7 @@ export default function KetuaEditPengeluaranKas() {
           keterangan: d.keterangan || '',
         })
       })
-      .catch(() => alert('Data tidak ditemukan'))
+      .catch(() => setAlert({ type: 'error', title: 'Gagal', message: 'Data tidak ditemukan' }))
       .finally(() => setLoading(false))
   }, [id])
 
@@ -52,10 +54,9 @@ export default function KetuaEditPengeluaranKas() {
         tanggal_keluar: form.tanggal_keluar,
         keterangan: form.keterangan,
       })
-      alert('Pengeluaran berhasil diperbarui!')
-      navigate('/kelola-pengeluaran-kas')
+      setAlert({ type: 'success', title: 'Berhasil', message: 'Pengeluaran berhasil diperbarui!', onClose: () => { navigate('/kelola-pengeluaran-kas') } })
     } catch (err) {
-      alert('Gagal: ' + (err?.message || 'Terjadi kesalahan'))
+      setAlert({ type: 'error', title: 'Gagal', message: err?.message || 'Terjadi kesalahan' })
     } finally {
       setSaving(false)
     }
@@ -119,6 +120,8 @@ export default function KetuaEditPengeluaranKas() {
           </div>
         </form>
       </div>
+
+      <AlertModal open={!!alert} onClose={() => { const cb = alert?.onClose; setAlert(null); cb?.() }} type={alert?.type} title={alert?.title} message={alert?.message} />
     </DashboardLayout>
   )
 }
